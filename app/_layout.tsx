@@ -1,6 +1,6 @@
-import { Link, Stack } from "expo-router";
+import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Text } from "react-native";
+import HeaderMenu from "@/components/HeaderMenu";
 import { colors } from "@/lib/theme";
 
 export default function RootLayout() {
@@ -20,16 +20,11 @@ export default function RootLayout() {
           name="index"
           options={{
             title: "ClipNote",
-            headerRight: () => (
-              <Link href="/about" asChild>
-                <Text style={{ color: colors.brandStrong, fontWeight: "600", fontSize: 15 }}>
-                  소개
-                </Text>
-              </Link>
-            ),
+            headerLeft: () => <HeaderMenu />,
           }}
         />
-        <Stack.Screen name="about" options={{ title: "ClipNote 소개" }} />
+        <Stack.Screen name="about" options={{ title: "소개" }} />
+        <Stack.Screen name="faq" options={{ title: "자주 묻는 질문" }} />
       </Stack>
     </>
   );
