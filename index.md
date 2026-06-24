@@ -12,18 +12,37 @@
 
 ## 현재 상태
 
-- 단계: **계획 수립 완료, 스캐폴딩 전.** `plan.md` 참고.
-- 원격 저장소: 빈 상태(커밋 0). 로컬도 비어 있음 → 스캐폴딩 예정.
+- 단계: **Phase 1 진행 중 — 스캐폴딩 + 홈 자동추출 + 소개/FAQ 메뉴 완료.** `plan.md` 참고.
+- 원격 저장소: `main`에 푸시됨. Expo SDK 56 + expo-router + TS.
 - 백엔드: 신규 개발 없음 — 웹 API(`clipnote.co.kr/api/*`) 그대로 호출.
+- 실행 확인: 웹(react-native-web)에서 홈 자동추출 카드 동작 확인. 시뮬레이터는 LAN 이슈 → `--localhost`/`--tunnel` 권장.
 
 ## 디렉터리 구조
 
-(스캐폴딩 후 갱신 — plan.md §5 예정 구조 참고)
+```
+clipnoteNative/
+├── app/
+│   ├── _layout.tsx     # Stack + 헤더(햄버거 메뉴)
+│   ├── index.tsx       # 홈: URL 자동추출 → 공유 카드/클립 저장 카드 미리보기
+│   ├── about.tsx       # 소개(ClipNote란/동작/로그인 분기)
+│   └── faq.tsx         # 자주 묻는 질문
+├── components/
+│   └── HeaderMenu.tsx  # 헤더 햄버거 메뉴(모달) → 소개/FAQ 이동
+├── lib/
+│   ├── api.ts          # 웹 API 클라이언트(metadata/clip/og)
+│   └── theme.ts        # 디자인 토큰·그라디언트(웹 이식)
+├── assets/             # 아이콘·스플래시
+├── app.json            # Expo 설정(scheme:clipnote, expo-router)
+└── package.json
+```
 
 ## 다음 할 일
 
-`plan.md` Phase 1: Expo + expo-router + TS 스캐폴딩 → 홈 화면(자동 추출 흐름) → 비로그인 로컬 저장.
+`plan.md` Phase 2(로그인 — Google·Kakao): EAS dev build 세팅 → Supabase RN 인증 → 딥링크.
+(또는 Phase 1 잔여: 비로그인 로컬 저장(AsyncStorage), 화면 디테일 다듬기.)
 
 ## 변경 이력
 
-- 2026-06-24: 최초 작성. 계획 문서화(plan.md), Expo 결정. 스캐폴딩 대기.
+- 2026-06-24: 최초 작성. 계획 문서화(plan.md), Expo 결정.
+- 2026-06-24: Phase 1 — Expo SDK 56 + expo-router + TS 스캐폴딩, 홈(URL 자동추출→공유 카드/클립 저장 카드 미리보기), lib/api(웹 API 재사용)·lib/theme(토큰 이식). main 푸시.
+- 2026-06-24: 소개(about)/FAQ(faq) 페이지 분리 + 헤더 햄버거 메뉴(HeaderMenu). expo-linear-gradient ~56.0.4 고정, package-lock 커밋.
