@@ -16,6 +16,7 @@ type Item = { label: string; href: string };
 
 const ITEMS: Item[] = [
   { label: "홈", href: "/" },
+  { label: "내 클립", href: "/clips" },
   { label: "소개", href: "/about" },
   { label: "자주 묻는 질문", href: "/faq" },
 ];
@@ -106,7 +107,7 @@ const styles = StyleSheet.create({
   burger: { gap: 4, paddingHorizontal: 6, paddingVertical: 8 },
   bar: { width: 18, height: 2, borderRadius: 1, backgroundColor: colors.fg },
 
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.4)" },
+  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.55)" },
   overlayFill: { flex: 1 },
 
   panel: {
@@ -114,25 +115,25 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     left: 0,
-    backgroundColor: colors.bg,
+    backgroundColor: "#1B1A24",
     borderRightWidth: StyleSheet.hairlineWidth,
-    borderRightColor: colors.border,
+    borderRightColor: "#2E2C3A",
     paddingHorizontal: 8,
   },
   brand: {
     fontSize: 20,
     fontWeight: "700",
-    color: colors.fg,
+    color: "#FFFFFF",
     paddingHorizontal: 12,
     paddingBottom: 12,
   },
-  brandAccent: { color: colors.brand },
+  brandAccent: { color: "#A593FF" },
   menu: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    borderTopColor: "#2E2C3A",
     paddingTop: 4,
   },
   item: { paddingHorizontal: 12, paddingVertical: 14, borderRadius: 8 },
-  itemPressed: { backgroundColor: colors.surface },
-  itemText: { fontSize: 16, fontWeight: "500", color: colors.fg },
+  itemPressed: { backgroundColor: "rgba(255,255,255,0.08)" },
+  itemText: { fontSize: 16, fontWeight: "500", color: "#F4F4F5" },
 });

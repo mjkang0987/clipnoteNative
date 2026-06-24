@@ -23,6 +23,7 @@ export default function RootLayout() {
             headerLeft: () => <HeaderMenu />,
           }}
         />
+        <Stack.Screen name="clips" options={{ title: "내 클립" }} />
         <Stack.Screen name="about" options={{ title: "소개" }} />
         <Stack.Screen name="faq" options={{ title: "자주 묻는 질문" }} />
       </Stack>
