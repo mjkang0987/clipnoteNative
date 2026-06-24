@@ -1,21 +1,23 @@
-import { Link } from "expo-router";
+import { useRouter } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { colors, radius } from "@/lib/theme";
 
 export default function Clips() {
   // TODO(Phase 2/3): 게스트=로컬 저장, 로그인=GET /api/clips 로 목록 채우기.
   const items: unknown[] = [];
+  const router = useRouter();
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
       {items.length === 0 ? (
         <View style={styles.emptyBox}>
           <Text style={styles.emptyText}>아직 저장한 클립이 없어요.</Text>
-          <Link href="/" asChild>
-            <Pressable style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}>
-              <Text style={styles.btnText}>첫 클립 만들기</Text>
-            </Pressable>
-          </Link>
+          <Pressable
+            onPress={() => router.push("/")}
+            style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}
+          >
+            <Text style={styles.btnText}>첫 클립 만들기</Text>
+          </Pressable>
         </View>
       ) : null}
     </ScrollView>
