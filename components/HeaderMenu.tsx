@@ -73,16 +73,26 @@ export default function HeaderMenu() {
         animationType="none"
         onRequestClose={() => close()}
       >
-        <Animated.View style={[styles.overlay, { opacity: fade }]}>
-          <Pressable style={styles.overlayFill} onPress={() => close()} />
-        </Animated.View>
-
-        <Animated.View
-          style={[
-            styles.panel,
-            { width: PANEL_W, paddingTop: insets.top + 12, transform: [{ translateX: tx }] },
-          ]}
-        >
+        <View style={styles.root}>
+          {/* 백드롭: 전체 화면 탭 → 닫기 */}
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            accessibilityLabel="메뉴 닫기"
+            onPress={() => close()}
+          />
+          {/* 딤(시각용, 터치는 통과) */}
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.overlay, { opacity: fade }]}
+          />
+          {/* 패널: 터치 흡수(여기 탭은 닫히지 않음) */}
+          <Animated.View
+            onStartShouldSetResponder={() => true}
+            style={[
+              styles.panel,
+              { width: PANEL_W, paddingTop: insets.top + 12, transform: [{ translateX: tx }] },
+            ]}
+          >
           <Text style={styles.brand}>
             Clip<Text style={styles.brandAccent}>Note</Text>
           </Text>
@@ -97,7 +107,8 @@ export default function HeaderMenu() {
               </Pressable>
             ))}
           </View>
-        </Animated.View>
+          </Animated.View>
+        </View>
       </Modal>
     </>
   );
@@ -107,8 +118,8 @@ const styles = StyleSheet.create({
   burger: { gap: 4, paddingHorizontal: 6, paddingVertical: 8 },
   bar: { width: 18, height: 2, borderRadius: 1, backgroundColor: colors.fg },
 
+  root: { flex: 1 },
   overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.55)" },
-  overlayFill: { flex: 1 },
 
   panel: {
     position: "absolute",
