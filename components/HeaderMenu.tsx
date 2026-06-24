@@ -1,23 +1,55 @@
-import { useState } from "react";
-import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  Dimensions,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { colors, radius } from "@/lib/theme";
+import { colors } from "@/lib/theme";
 
 type Item = { label: string; href: string };
 
 const ITEMS: Item[] = [
+  { label: "홈", href: "/" },
   { label: "소개", href: "/about" },
   { label: "자주 묻는 질문", href: "/faq" },
 ];
 
-/** 헤더 좌측 햄버거 버튼 + 드롭다운 메뉴(모달). 항목 선택 시 해당 페이지로 이동. */
+const PANEL_W = Math.min(300, Dimensions.get("window").width * 0.8);
+
+/** 헤더 좌측 햄버거 → 좌측에서 덮으며 슬라이드 인 하는 사이드 메뉴(aside). */
 export default function HeaderMenu() {
-  const [open, setOpen] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const tx = useRef(new Animated.Value(-PANEL_W)).current;
+  const fade = useRef(new Animated.Value(0)).current;
+  const insets = useSafeAreaInsets();
   const router = useRouter();
 
+  useEffect(() => {
+    if (!visible) return;
+    Animated.parallel([
+      Animated.timing(tx, { toValue: 0, duration: 220, useNativeDriver: true }),
+      Animated.timing(fade, { toValue: 1, duration: 220, useNativeDriver: true }),
+    ]).start();
+  }, [visible, tx, fade]);
+
+  function close(after?: () => void) {
+    Animated.parallel([
+      Animated.timing(tx, { toValue: -PANEL_W, duration: 200, useNativeDriver: true }),
+      Animated.timing(fade, { toValue: 0, duration: 200, useNativeDriver: true }),
+    ]).start(() => {
+      setVisible(false);
+      after?.();
+    });
+  }
+
   function go(href: string) {
-    setOpen(false);
-    router.push(href as never);
+    close(() => router.push(href as never));
   }
 
   return (
@@ -25,7 +57,7 @@ export default function HeaderMenu() {
       <Pressable
         accessibilityLabel="메뉴 열기"
         accessibilityRole="button"
-        onPress={() => setOpen(true)}
+        onPress={() => setVisible(true)}
         hitSlop={10}
         style={styles.burger}
       >
@@ -35,28 +67,36 @@ export default function HeaderMenu() {
       </Pressable>
 
       <Modal
-        visible={open}
+        visible={visible}
         transparent
-        animationType="fade"
-        onRequestClose={() => setOpen(false)}
+        animationType="none"
+        onRequestClose={() => close()}
       >
-        <Pressable style={styles.overlay} onPress={() => setOpen(false)}>
-          <View style={styles.sheet}>
-            {ITEMS.map((it, i) => (
+        <Animated.View style={[styles.overlay, { opacity: fade }]}>
+          <Pressable style={styles.overlayFill} onPress={() => close()} />
+        </Animated.View>
+
+        <Animated.View
+          style={[
+            styles.panel,
+            { width: PANEL_W, paddingTop: insets.top + 12, transform: [{ translateX: tx }] },
+          ]}
+        >
+          <Text style={styles.brand}>
+            Clip<Text style={styles.brandAccent}>Note</Text>
+          </Text>
+          <View style={styles.menu}>
+            {ITEMS.map((it) => (
               <Pressable
                 key={it.href}
                 onPress={() => go(it.href)}
-                style={({ pressed }) => [
-                  styles.item,
-                  i > 0 && styles.itemBorder,
-                  pressed && styles.itemPressed,
-                ]}
+                style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
               >
                 <Text style={styles.itemText}>{it.label}</Text>
               </Pressable>
             ))}
           </View>
-        </Pressable>
+        </Animated.View>
       </Modal>
     </>
   );
@@ -66,25 +106,33 @@ const styles = StyleSheet.create({
   burger: { gap: 4, paddingHorizontal: 6, paddingVertical: 8 },
   bar: { width: 18, height: 2, borderRadius: 1, backgroundColor: colors.fg },
 
-  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.2)" },
-  sheet: {
+  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.4)" },
+  overlayFill: { flex: 1 },
+
+  panel: {
     position: "absolute",
-    top: 8,
-    left: 12,
-    minWidth: 180,
+    top: 0,
+    bottom: 0,
+    left: 0,
     backgroundColor: colors.bg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
-    borderRadius: radius.md,
-    paddingVertical: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    borderRightColor: colors.border,
+    paddingHorizontal: 8,
   },
-  item: { paddingHorizontal: 16, paddingVertical: 13 },
-  itemBorder: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  brand: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: colors.fg,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+  },
+  brandAccent: { color: colors.brand },
+  menu: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    paddingTop: 4,
+  },
+  item: { paddingHorizontal: 12, paddingVertical: 14, borderRadius: 8 },
   itemPressed: { backgroundColor: colors.surface },
-  itemText: { fontSize: 15, fontWeight: "500", color: colors.fg },
+  itemText: { fontSize: 16, fontWeight: "500", color: colors.fg },
 });
