@@ -1,6 +1,7 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import HeaderMenu from "@/components/HeaderMenu";
+import HeaderClipsLink from "@/components/HeaderClipsLink";
 import { colors } from "@/lib/theme";
 
 export default function RootLayout() {
@@ -21,6 +22,7 @@ export default function RootLayout() {
           options={{
             title: "ClipNote",
             headerLeft: () => <HeaderMenu />,
+            headerRight: () => <HeaderClipsLink />,
           }}
         />
         <Stack.Screen name="clips" options={{ title: "내 클립" }} />
