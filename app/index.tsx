@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,6 +11,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Image } from "expo-image";
 import { fetchMetadata, type ClipMetadata } from "@/lib/api";
+import { addLocalClip } from "@/lib/local-clips";
 import { colors, pickGradient, radius } from "@/lib/theme";
 
 export default function Home() {
@@ -24,6 +24,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
 
   const [cardW, setCardW] = useState(0);
+  const [savedLocal, setSavedLocal] = useState(false);
 
   const fetchedUrlRef = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -95,6 +96,23 @@ export default function Home() {
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url]);
+
+  // 게스트: 이 기기(AsyncStorage)에 저장 → 내 클립에서 조회.
+  async function handleSaveLocal() {
+    const saveTitle = title.trim() || meta?.title || (hasInput ? prettyHost(url) : "");
+    if (!saveTitle) return;
+    await addLocalClip({
+      url: url.trim(),
+      title: saveTitle,
+      description: meta?.description ?? null,
+      image: meta?.image ?? null,
+      siteName: meta?.siteName ?? null,
+      gradient: gradient.name,
+      tags,
+    });
+    setSavedLocal(true);
+    setTimeout(() => setSavedLocal(false), 1800);
+  }
 
   const noMeta = meta?.source === "none";
 
@@ -172,19 +190,19 @@ export default function Home() {
         <Pressable
           style={({ pressed }) => [
             styles.primaryBtn,
-            (!hasInput || pressed) && styles.primaryBtnPressed,
+            pressed && styles.primaryBtnPressed,
             !hasInput && styles.btnDisabled,
           ]}
           disabled={!hasInput}
-          onPress={() =>
-            Alert.alert(
-              "곧 지원돼요",
-              "로그인·공유 링크 생성은 다음 단계(Phase 2)에서 연결됩니다.",
-            )
-          }
+          onPress={handleSaveLocal}
         >
-          <Text style={styles.primaryBtnText}>공유 링크 만들기</Text>
+          <Text style={styles.primaryBtnText}>
+            {savedLocal ? "저장됨 ✓" : "이 기기에 저장"}
+          </Text>
         </Pressable>
+        <Text style={styles.saveHint}>
+          짧은 공유 링크는 로그인 후 만들 수 있어요(다음 단계).
+        </Text>
       </View>
 
       {error && (
@@ -367,6 +385,7 @@ const styles = StyleSheet.create({
   primaryBtnPressed: { backgroundColor: colors.brandStrong },
   primaryBtnText: { color: colors.white, fontSize: 15, fontWeight: "600" },
   btnDisabled: { opacity: 0.5 },
+  saveHint: { marginTop: 8, fontSize: 12, color: colors.fgMuted, textAlign: "center" },
 
   errorBox: {
     marginTop: 16,
