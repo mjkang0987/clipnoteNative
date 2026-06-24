@@ -46,3 +46,5 @@ clipnoteNative/
 - 2026-06-24: 최초 작성. 계획 문서화(plan.md), Expo 결정.
 - 2026-06-24: Phase 1 — Expo SDK 56 + expo-router + TS 스캐폴딩, 홈(URL 자동추출→공유 카드/클립 저장 카드 미리보기), lib/api(웹 API 재사용)·lib/theme(토큰 이식). main 푸시.
 - 2026-06-24: 소개(about)/FAQ(faq) 페이지 분리 + 헤더 햄버거 메뉴(HeaderMenu). expo-linear-gradient ~56.0.4 고정, package-lock 커밋.
+- 2026-06-24: 햄버거를 좌측 슬라이드 사이드 메뉴(다크 배경)로, backdrop 닫기. '내 클립' 메뉴/헤더 바로가기 추가.
+- 2026-06-24: Phase 1 마무리 — 게스트 로컬 저장(AsyncStorage 2.2.0, lib/local-clips), 홈 '이 기기에 저장', 내 클립 카드 리스트(웹과 동일 카드 + 삭제 + 탭 시 원본 열기). 실기기(시뮬레이터)에서 저장→조회 확인.
