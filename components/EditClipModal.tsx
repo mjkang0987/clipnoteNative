@@ -9,17 +9,16 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { updateLocalClip, type LocalClip } from "@/lib/local-clips";
 import { colors, radius } from "@/lib/theme";
 
 type Props = {
-  clip: LocalClip | null;
+  clip: { title: string; tags: string[] } | null;
   onClose: () => void;
-  onSaved: (list: LocalClip[]) => void;
+  onSubmit: (title: string, tags: string[]) => void | Promise<void>;
 };
 
-/** 단건 편집 모달 — 제목·태그 수정(웹과 동일). */
-export default function EditClipModal({ clip, onClose, onSaved }: Props) {
+/** 단건 편집 모달 — 제목·태그 수정(저장 방식은 부모가 결정: 로컬/DB). */
+export default function EditClipModal({ clip, onClose, onSubmit }: Props) {
   const [title, setTitle] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [saving, setSaving] = useState(false);
@@ -40,9 +39,8 @@ export default function EditClipModal({ clip, onClose, onSaved }: Props) {
       .slice(0, 6);
     const t = title.trim() || clip.title;
     setSaving(true);
-    const list = await updateLocalClip(clip.url, { title: t, tags });
+    await onSubmit(t, tags);
     setSaving(false);
-    onSaved(list);
     onClose();
   }
 

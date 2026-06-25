@@ -82,4 +82,61 @@ export function ogImageUrl(p: {
   return `${API_BASE}/api/og?${q.toString()}`;
 }
 
+export type DbClip = {
+  slug: string;
+  url: string;
+  title: string;
+  description: string | null;
+  image: string | null;
+  siteName: string | null;
+  gradient: string;
+  tags: string[];
+  saved: boolean;
+  createdAt: string;
+};
+
+/** 내 클립(DB) 목록 — 로그인 토큰 필요. GET /api/clips. */
+export async function getClips(
+  accessToken?: string,
+): Promise<{ loggedIn: boolean; clips: DbClip[] }> {
+  try {
+    const res = await fetch(`${API_BASE}/api/clips`, {
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    });
+    if (!res.ok) return { loggedIn: false, clips: [] };
+    return (await res.json()) as { loggedIn: boolean; clips: DbClip[] };
+  } catch {
+    return { loggedIn: false, clips: [] };
+  }
+}
+
+/** DB 클립 수정(제목·태그). PATCH /api/clip/[slug]. */
+export async function updateClip(
+  slug: string,
+  patch: { title?: string; tags?: string[] },
+  accessToken?: string,
+): Promise<boolean> {
+  const res = await fetch(`${API_BASE}/api/clip/${slug}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: JSON.stringify(patch),
+  });
+  return res.ok;
+}
+
+/** DB 클립 삭제. DELETE /api/clip/[slug]. */
+export async function deleteClip(
+  slug: string,
+  accessToken?: string,
+): Promise<boolean> {
+  const res = await fetch(`${API_BASE}/api/clip/${slug}`, {
+    method: "DELETE",
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+  });
+  return res.ok;
+}
+
 export { API_BASE };

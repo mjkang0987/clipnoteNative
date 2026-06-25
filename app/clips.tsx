@@ -18,15 +18,31 @@ import {
   getLocalClips,
   removeLocalClip,
   updateLocalClip,
-  type LocalClip,
 } from "@/lib/local-clips";
+import { getClips, updateClip, deleteClip } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
 import EditClipModal from "@/components/EditClipModal";
 import TagApplyModal from "@/components/TagApplyModal";
 import { GRADIENTS, colors, pickGradient, radius } from "@/lib/theme";
 
+// 로컬·DB 클립을 한 형태로 통합. id = slug(DB) 또는 url(로컬).
+type UClip = {
+  id: string;
+  slug?: string;
+  url: string;
+  title: string;
+  description: string | null;
+  image: string | null;
+  siteName: string | null;
+  gradient: string;
+  tags: string[];
+  local: boolean;
+};
+
 export default function Clips() {
-  const [clips, setClips] = useState<LocalClip[] | null>(null);
-  const [editing, setEditing] = useState<LocalClip | null>(null);
+  const { loggedIn, accessToken } = useAuth();
+  const [clips, setClips] = useState<UClip[] | null>(null);
+  const [editing, setEditing] = useState<UClip | null>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [tagModal, setTagModal] = useState(false);
@@ -35,76 +51,127 @@ export default function Clips() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  async function copyUrl(url: string) {
-    await Clipboard.setStringAsync(url);
-    setCopiedUrl(url);
-    setTimeout(() => setCopiedUrl((u) => (u === url ? null : u)), 1500);
-  }
+  const load = useCallback(async (): Promise<UClip[]> => {
+    if (loggedIn) {
+      const { clips: db } = await getClips(accessToken ?? undefined);
+      return db.map((c) => ({
+        id: c.slug,
+        slug: c.slug,
+        url: c.url,
+        title: c.title,
+        description: c.description,
+        image: c.image,
+        siteName: c.siteName,
+        gradient: c.gradient,
+        tags: c.tags ?? [],
+        local: false,
+      }));
+    }
+    const local = await getLocalClips();
+    return local.map((c) => ({
+      id: c.url,
+      url: c.url,
+      title: c.title,
+      description: c.description,
+      image: c.image,
+      siteName: c.siteName,
+      gradient: c.gradient,
+      tags: c.tags ?? [],
+      local: true,
+    }));
+  }, [loggedIn, accessToken]);
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
-      getLocalClips().then((list) => {
+      load().then((list) => {
         if (active) setClips(list);
       });
       return () => {
         active = false;
       };
-    }, []),
+    }, [load]),
   );
 
-  function enterSelect(url: string) {
+  async function reload() {
+    setClips(await load());
+  }
+
+  function enterSelect(id: string) {
     setSelectMode(true);
-    setSelected([url]);
+    setSelected([id]);
   }
   function exitSelect() {
     setSelectMode(false);
     setSelected([]);
   }
-  function toggle(url: string) {
-    setSelected((s) => (s.includes(url) ? s.filter((u) => u !== url) : [...s, url]));
+  function toggle(id: string) {
+    setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   }
 
-  function confirmDelete(clip: LocalClip) {
+  async function copy(url: string) {
+    await Clipboard.setStringAsync(url);
+    setCopiedUrl(url);
+    setTimeout(() => setCopiedUrl((u) => (u === url ? null : u)), 1500);
+  }
+
+  async function removeOne(clip: UClip) {
+    if (clip.local) await removeLocalClip(clip.url);
+    else if (clip.slug) await deleteClip(clip.slug, accessToken ?? undefined);
+  }
+
+  async function saveEdit(clip: UClip, title: string, tags: string[]) {
+    if (clip.local) await updateLocalClip(clip.url, { title, tags });
+    else if (clip.slug) await updateClip(clip.slug, { title, tags }, accessToken ?? undefined);
+  }
+
+  function confirmDelete(clip: UClip) {
     Alert.alert("클립 삭제", `‘${clip.title}’ 클립을 삭제할까요?`, [
       { text: "취소", style: "cancel" },
       {
         text: "삭제",
         style: "destructive",
-        onPress: async () => setClips(await removeLocalClip(clip.url)),
+        onPress: async () => {
+          await removeOne(clip);
+          reload();
+        },
       },
     ]);
   }
 
-  async function applyTags(tags: string[], mode: "add" | "replace") {
-    const list = clips ?? [];
-    for (const url of selected) {
-      const cur = list.find((c) => c.url === url)?.tags ?? [];
-      const next =
-        mode === "add"
-          ? Array.from(new Set([...cur, ...tags])).slice(0, 6)
-          : tags.slice(0, 6);
-      await updateLocalClip(url, { tags: next });
-    }
-    setClips(await getLocalClips());
-    exitSelect();
-  }
-
   function confirmBulkDelete() {
-    if (selected.length === 0) return;
+    if (selected.length === 0 || !clips) return;
     Alert.alert("클립 삭제", `선택한 ${selected.length}개 클립을 삭제할까요?`, [
       { text: "취소", style: "cancel" },
       {
         text: "삭제",
         style: "destructive",
         onPress: async () => {
-          let list = clips ?? [];
-          for (const url of selected) list = await removeLocalClip(url);
-          setClips(list);
+          for (const id of selected) {
+            const c = clips.find((x) => x.id === id);
+            if (c) await removeOne(c);
+          }
+          await reload();
           exitSelect();
         },
       },
     ]);
+  }
+
+  async function applyTags(tags: string[], mode: "add" | "replace") {
+    if (!clips) return;
+    for (const id of selected) {
+      const c = clips.find((x) => x.id === id);
+      if (!c) continue;
+      const next =
+        mode === "add"
+          ? Array.from(new Set([...c.tags, ...tags])).slice(0, 6)
+          : tags.slice(0, 6);
+      if (c.local) await updateLocalClip(c.url, { tags: next });
+      else if (c.slug) await updateClip(c.slug, { tags: next }, accessToken ?? undefined);
+    }
+    await reload();
+    exitSelect();
   }
 
   if (clips === null) {
@@ -166,11 +233,7 @@ export default function Clips() {
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.filterRow}
           >
-            <FilterChip
-              label="전체"
-              active={activeTag === null}
-              onPress={() => setActiveTag(null)}
-            />
+            <FilterChip label="전체" active={activeTag === null} onPress={() => setActiveTag(null)} />
             {allTags.map((t) => (
               <FilterChip
                 key={t}
@@ -190,16 +253,16 @@ export default function Clips() {
           const g =
             GRADIENTS.find((x) => x.name === clip.gradient) ??
             pickGradient(clip.title || clip.url);
-          const isSel = selected.includes(clip.url);
+          const isSel = selected.includes(clip.id);
 
           const card = (
             <View style={styles.card}>
               <Pressable
                 onPress={() => {
-                  if (selectMode) toggle(clip.url);
+                  if (selectMode) toggle(clip.id);
                 }}
                 onLongPress={() => {
-                  if (!selectMode) enterSelect(clip.url);
+                  if (!selectMode) enterSelect(clip.id);
                 }}
                 style={({ pressed }) => [styles.cardMain, pressed && styles.cardPressed]}
               >
@@ -219,7 +282,6 @@ export default function Clips() {
                     <Image source={{ uri: clip.image }} style={styles.thumbImg} contentFit="cover" />
                   )}
                 </View>
-
                 <View style={styles.body}>
                   <Text style={styles.title} numberOfLines={1}>
                     {clip.title}
@@ -250,7 +312,7 @@ export default function Clips() {
                   </Pressable>
                   <View style={styles.actionDivider} />
                   <Pressable
-                    onPress={() => copyUrl(clip.url)}
+                    onPress={() => copy(clip.url)}
                     style={({ pressed }) => [styles.cardAction, pressed && styles.actionPressed]}
                   >
                     <Text style={styles.actionText}>
@@ -262,12 +324,11 @@ export default function Clips() {
             </View>
           );
 
-          // 선택 모드에선 스와이프 비활성(탭=선택). 일반 모드만 Swipeable.
           return selectMode ? (
-            <View key={clip.url}>{card}</View>
+            <View key={clip.id}>{card}</View>
           ) : (
             <Swipeable
-              key={clip.url}
+              key={clip.id}
               friction={2}
               rightThreshold={40}
               renderRightActions={() => (
@@ -275,14 +336,12 @@ export default function Clips() {
                   <Pressable
                     onPress={() => setEditing(clip)}
                     style={[styles.swipeBtn, styles.swipeEdit]}
-                    accessibilityLabel="클립 편집"
                   >
                     <Text style={styles.swipeText}>편집</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => confirmDelete(clip)}
                     style={[styles.swipeBtn, styles.swipeDel]}
-                    accessibilityLabel="클립 삭제"
                   >
                     <Text style={styles.swipeText}>삭제</Text>
                   </Pressable>
@@ -295,9 +354,14 @@ export default function Clips() {
         })}
 
         <EditClipModal
-          clip={editing}
+          clip={editing ? { title: editing.title, tags: editing.tags } : null}
           onClose={() => setEditing(null)}
-          onSaved={(list) => setClips(list)}
+          onSubmit={async (title, tags) => {
+            if (editing) {
+              await saveEdit(editing, title, tags);
+              await reload();
+            }
+          }}
         />
       </ScrollView>
 
@@ -353,10 +417,7 @@ function FilterChip({
 }) {
   return (
     <Pressable onPress={onPress} style={[styles.filterChip, active && styles.filterChipOn]}>
-      <Text
-        style={[styles.filterChipText, active && styles.filterChipTextOn]}
-        numberOfLines={1}
-      >
+      <Text style={[styles.filterChipText, active && styles.filterChipTextOn]} numberOfLines={1}>
         {label}
       </Text>
     </Pressable>
@@ -465,12 +526,7 @@ const styles = StyleSheet.create({
 
   swipeHint: { fontSize: 18, color: colors.border, paddingLeft: 4 },
   swipeActions: { flexDirection: "row", alignItems: "stretch", marginLeft: 8, gap: 8 },
-  swipeBtn: {
-    width: 68,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radius.md,
-  },
+  swipeBtn: { width: 68, alignItems: "center", justifyContent: "center", borderRadius: radius.md },
   swipeEdit: { backgroundColor: colors.brand },
   swipeDel: { backgroundColor: colors.danger },
   swipeText: { color: colors.white, fontSize: 14, fontWeight: "600" },
@@ -487,13 +543,7 @@ const styles = StyleSheet.create({
     paddingTop: 10,
   },
   barRow: { flexDirection: "row", gap: 8 },
-  barBtn: {
-    flex: 1,
-    height: 48,
-    borderRadius: radius.md,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  barBtn: { flex: 1, height: 48, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
   tagBtn: {
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.brand,
