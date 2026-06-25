@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import { useAuth } from "@/lib/auth";
 import { colors } from "@/lib/theme";
 
@@ -54,6 +55,10 @@ export default function HeaderMenu() {
   // 상위 섹션 전환은 replace(뒤로가기 스택 누적 방지 — 각 화면에 햄버거).
   function go(href: string) {
     close(() => router.replace(href as never));
+  }
+
+  function openPrivacy() {
+    close(() => WebBrowser.openBrowserAsync("https://clipnote.co.kr/privacy"));
   }
 
   return (
@@ -109,6 +114,14 @@ export default function HeaderMenu() {
                 <Text style={styles.itemText}>{it.label}</Text>
               </Pressable>
             ))}
+            {loggedIn && (
+              <Pressable
+                onPress={openPrivacy}
+                style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
+              >
+                <Text style={styles.itemSub}>개인정보처리방침</Text>
+              </Pressable>
+            )}
             <Pressable
               onPress={() => {
                 if (loggedIn) {
@@ -169,4 +182,5 @@ const styles = StyleSheet.create({
   item: { paddingHorizontal: 12, paddingVertical: 14, borderRadius: 8 },
   itemPressed: { backgroundColor: "rgba(255,255,255,0.08)" },
   itemText: { fontSize: 16, fontWeight: "500", color: "#F4F4F5" },
+  itemSub: { fontSize: 14, fontWeight: "400", color: "#9A98A8" },
 });
