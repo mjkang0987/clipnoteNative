@@ -43,7 +43,11 @@ export default function RootLayout() {
           />
           <Stack.Screen
             name="login"
-            options={{ title: "로그인", headerRight: () => <HeaderNewClip /> }}
+            options={{
+              title: "로그인",
+              headerLeft: () => <HeaderMenu />,
+              headerRight: () => <HeaderNewClip />,
+            }}
           />
           <Stack.Screen
             name="about"
