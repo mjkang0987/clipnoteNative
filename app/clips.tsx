@@ -340,15 +340,6 @@ export default function Clips() {
                       바로가기
                     </Text>
                   </Pressable>
-                  <View style={styles.actionDivider} />
-                  <Pressable
-                    onPress={() => copyAs(`orig:${clip.id}`, clip.url)}
-                    style={({ pressed }) => [styles.cardAction, pressed && styles.actionPressed]}
-                  >
-                    <Text style={styles.actionMuted} numberOfLines={1} adjustsFontSizeToFit>
-                      {copiedKey === `orig:${clip.id}` ? "복사됨 ✓" : "원본 링크 복사"}
-                    </Text>
-                  </Pressable>
                 </View>
               )}
             </View>
