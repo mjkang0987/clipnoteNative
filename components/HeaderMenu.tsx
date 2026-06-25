@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { useAuth } from "@/lib/auth";
 import { colors } from "@/lib/theme";
 
 type Item = { label: string; href: string };
@@ -30,6 +31,7 @@ export default function HeaderMenu() {
   const fade = useRef(new Animated.Value(0)).current;
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { loggedIn, signOut } = useAuth();
 
   useEffect(() => {
     if (!visible) return;
@@ -106,6 +108,18 @@ export default function HeaderMenu() {
                 <Text style={styles.itemText}>{it.label}</Text>
               </Pressable>
             ))}
+            <Pressable
+              onPress={() => {
+                if (loggedIn) {
+                  close(() => signOut());
+                } else {
+                  go("/login");
+                }
+              }}
+              style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
+            >
+              <Text style={styles.itemText}>{loggedIn ? "로그아웃" : "로그인"}</Text>
+            </Pressable>
           </View>
           </Animated.View>
         </View>

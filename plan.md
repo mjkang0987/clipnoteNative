@@ -47,11 +47,21 @@
 - [x] 소개(about)/FAQ(faq) 페이지 + 헤더 햄버거(사이드) 메뉴 + '내 클립' 바로가기.
 - [x] 비로그인 로컬 저장(AsyncStorage) + 내 클립 카드 리스트(웹과 동일, 삭제·원본 열기).
 
-### Phase 2 — 인증
-- [ ] Supabase 클라이언트(RN), 세션 영속(secure-store).
-- [ ] Google 로그인(expo-auth-session + 딥링크).
-- [ ] Kakao 로그인(웹 OAuth 플로우 또는 네이티브 SDK — 딥링크 스킴).
-- [ ] 개인정보 동의(웹과 동일 정책).
+### Phase 2 — 인증 (구현 중)
+- [ ] Supabase RN 클라이언트(`lib/supabase.ts`) — AsyncStorage 세션 영속, `detectSessionInUrl:false`, `react-native-url-polyfill`.
+- [ ] 인증 상태 훅/컨텍스트(`lib/auth.tsx`) — 세션 구독.
+- [ ] 로그인 화면(`app/login.tsx`) — Google·Kakao 버튼 + 개인정보 동의 체크박스 + 게스트 계속(웹 동일).
+- [ ] OAuth 플로우 — `signInWithOAuth({skipBrowserRedirect})` → `WebBrowser.openAuthSessionAsync` → `exchangeCodeForSession`. redirect = `Linking.createURL("auth/callback")`.
+- [ ] 헤더 인증 상태(로그인/로그아웃), 홈 메뉴에 로그인 항목.
+
+#### 핵심 메모
+- 카카오·구글 모두 **Supabase 웹 OAuth 콜백 경유**(provider→supabase.co/auth/v1/callback→앱 딥링크). 네이티브 SDK 불필요 → **Expo Go 우선 시도**, 안 되면 dev build.
+- 공유 링크 생성(`POST /api/clip`)·DB 클립 목록(`GET /api/clips`)은 **세션 토큰을 Authorization 헤더로** 전달. (웹 API가 토큰 인증 받는지 확인 필요 — 현재 쿠키 기반이면 API에 Bearer 토큰 지원 추가 필요.)
+
+#### 사용자 할 일
+- `npx expo install @supabase/supabase-js react-native-url-polyfill`
+- Supabase 대시보드 → Authentication → URL Configuration → **Redirect URLs 에 앱 딥링크 추가**: `clipnote://` 와 (Expo Go 테스트용) `exp://` 프록시 URL. (실행 시 콘솔에 찍히는 redirect URL 그대로 등록)
+- Google·Kakao provider 는 웹에서 이미 설정됨(콜백이 Supabase 라 모바일 추가 설정 대부분 불필요).
 
 ### Phase 3 — 내 클립
 - [x] 목록(로컬) — 카드(썸네일/그라디언트·제목·호스트·태그), 탭 시 원본 열기.
