@@ -119,7 +119,7 @@ export default function HeaderMenu() {
                 onPress={openPrivacy}
                 style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
               >
-                <Text style={styles.itemSub}>개인정보처리방침</Text>
+                <Text style={styles.itemText}>개인정보처리방침</Text>
               </Pressable>
             )}
             <Pressable
@@ -182,5 +182,4 @@ const styles = StyleSheet.create({
   item: { paddingHorizontal: 12, paddingVertical: 14, borderRadius: 8 },
   itemPressed: { backgroundColor: "rgba(255,255,255,0.08)" },
   itemText: { fontSize: 16, fontWeight: "500", color: "#F4F4F5" },
-  itemSub: { fontSize: 14, fontWeight: "400", color: "#9A98A8" },
 });
