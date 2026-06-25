@@ -16,9 +16,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   getLocalClips,
   removeLocalClip,
+  updateLocalClip,
   type LocalClip,
 } from "@/lib/local-clips";
 import EditClipModal from "@/components/EditClipModal";
+import TagApplyModal from "@/components/TagApplyModal";
 import { GRADIENTS, colors, pickGradient, radius } from "@/lib/theme";
 
 export default function Clips() {
@@ -26,6 +28,7 @@ export default function Clips() {
   const [editing, setEditing] = useState<LocalClip | null>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
+  const [tagModal, setTagModal] = useState(false);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -62,6 +65,20 @@ export default function Clips() {
         onPress: async () => setClips(await removeLocalClip(clip.url)),
       },
     ]);
+  }
+
+  async function applyTags(tags: string[], mode: "add" | "replace") {
+    const list = clips ?? [];
+    for (const url of selected) {
+      const cur = list.find((c) => c.url === url)?.tags ?? [];
+      const next =
+        mode === "add"
+          ? Array.from(new Set([...cur, ...tags])).slice(0, 6)
+          : tags.slice(0, 6);
+      await updateLocalClip(url, { tags: next });
+    }
+    setClips(await getLocalClips());
+    exitSelect();
   }
 
   function confirmBulkDelete() {
@@ -223,19 +240,41 @@ export default function Clips() {
 
       {selectMode && (
         <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 10 }]}>
-          <Pressable
-            disabled={selected.length === 0}
-            onPress={confirmBulkDelete}
-            style={({ pressed }) => [
-              styles.bulkBtn,
-              selected.length === 0 && styles.btnDisabled,
-              pressed && styles.pressedDanger,
-            ]}
-          >
-            <Text style={styles.bulkBtnText}>삭제 ({selected.length})</Text>
-          </Pressable>
+          <View style={styles.barRow}>
+            <Pressable
+              disabled={selected.length === 0}
+              onPress={() => setTagModal(true)}
+              style={({ pressed }) => [
+                styles.barBtn,
+                styles.tagBtn,
+                selected.length === 0 && styles.btnDisabled,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.tagBtnText}>태그 적용</Text>
+            </Pressable>
+            <Pressable
+              disabled={selected.length === 0}
+              onPress={confirmBulkDelete}
+              style={({ pressed }) => [
+                styles.barBtn,
+                styles.bulkBtn,
+                selected.length === 0 && styles.btnDisabled,
+                pressed && styles.pressedDanger,
+              ]}
+            >
+              <Text style={styles.bulkBtnText}>삭제 ({selected.length})</Text>
+            </Pressable>
+          </View>
         </View>
       )}
+
+      <TagApplyModal
+        visible={tagModal}
+        count={selected.length}
+        onClose={() => setTagModal(false)}
+        onApply={applyTags}
+      />
     </View>
   );
 }
@@ -342,14 +381,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 10,
   },
-  bulkBtn: {
+  barRow: { flexDirection: "row", gap: 8 },
+  barBtn: {
+    flex: 1,
     height: 48,
     borderRadius: radius.md,
-    backgroundColor: colors.danger,
     alignItems: "center",
     justifyContent: "center",
   },
-  btnDisabled: { opacity: 0.4 },
-  pressedDanger: { opacity: 0.85 },
+  tagBtn: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.brand,
+    backgroundColor: colors.brandSoft,
+  },
+  tagBtnText: { color: colors.brandStrong, fontSize: 15, fontWeight: "600" },
+  bulkBtn: { backgroundColor: colors.danger },
   bulkBtnText: { color: colors.white, fontSize: 15, fontWeight: "600" },
+  btnDisabled: { opacity: 0.4 },
+  pressed: { opacity: 0.85 },
+  pressedDanger: { opacity: 0.85 },
 });
