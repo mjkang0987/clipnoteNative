@@ -84,6 +84,74 @@
 - [ ] 딥링크/유니버설 링크(공유 slug 열기).
 - [ ] 앱스토어/플레이스토어 등록·심사.
 
+## 4.5 계획: 네이버 로그인 (커스텀 OAuth, 2026-06-24)
+
+### 배경
+Supabase 는 네이버 provider 미지원 → 구글·카카오처럼 `signInWithOAuth` 불가.
+**백엔드 경유**로 네이버 OAuth 후 Supabase 세션을 발급해 앱에 돌려준다.
+
+### 흐름
+1. 앱: `네이버로 계속하기` → 네이버 authorize URL 을 `WebBrowser.openAuthSessionAsync` 로 염.
+   - `redirect_uri = https://clipnote.co.kr/api/auth/naver/callback` (콘솔 등록값과 동일)
+   - `state` 에 앱 복귀 딥링크(`Linking.createURL("auth/naver")`)+nonce 를 인코딩해 전달.
+2. 네이버 → 웹 콜백(`/api/auth/naver/callback?code&state`).
+3. **웹 콜백(서버, service_role)**:
+   - code → 네이버 token 교환(`nid.naver.com/oauth2.0/token`, client_secret 서버 보관)
+   - 프로필 조회(`openapi.naver.com/v1/nid/me`) → id·email·nickname·profile_image
+   - Supabase admin: 이메일로 사용자 생성/조회 → `generateLink({type:'magiclink', email})` 로 `hashed_token` 획득
+   - 앱 딥링크로 302 redirect: `<returnUrl>?token_hash=...&type=magiclink`
+4. 앱: `openAuthSessionAsync` 성공 → url 의 `token_hash` 로 `supabase.auth.verifyOtp({type:'magiclink', token_hash})` → 세션. 로그인 완료.
+
+### 영향 파일
+- 웹(신규 파일만, **feat 브랜치**): `app/api/auth/naver/callback/route.ts`. (기존 파일 미수정 — 충돌·롤백 방지)
+- 앱: `app/login.tsx`(네이버 버튼+플로우), 필요 시 `lib/naver.ts`.
+
+### env
+- 웹 `.env.local`: `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` (service_role·SUPABASE_URL 기존).
+- 앱 `.env`: `EXPO_PUBLIC_NAVER_CLIENT_ID`(authorize URL 구성용, 공개키 성격).
+
+### 사용자 할 일
+- 네이버 개발자 콘솔: 앱 등록, Callback `https://clipnote.co.kr/api/auth/naver/callback`, 동의항목 이메일·닉네임·프로필, Client ID/Secret 발급.
+- 웹·앱 .env 에 키 입력(Secret 은 웹에만).
+
+### 검증
+- 시뮬레이터에서 네이버 로그인 → 콜백 → 앱 복귀 → 세션. 단 콜백 라우트가 프로덕션 배포돼 있어야 동작(네이버 콜백이 clipnote.co.kr).
+
+### 보강 (2026-06-25) — 딥링크 복귀 이중화
+**문제**: Expo Go 터널에서 `openAuthSessionAsync` 가 `exp://` 복귀를 못 낚아채
+`result=cancel` 로 끝나고 인앱 브라우저가 콜백 페이지에서 멈춤(구글·카카오는 Supabase
+경유라 OK, 네이버만 우리 콜백 경유라 불안정).
+
+**원인**: 복귀를 `openAuthSessionAsync` 단일 경로에만 의존. `auth/naver` 딥링크를
+받아주는 핸들러가 앱에 없어, 콜백 HTML 의 폴백 링크를 눌러도 처리 불가.
+
+**해결**:
+- 웹 콜백: 302 대신 **HTML+JS(`location.replace`)+meta refresh+수동 링크** 로 딥링크 이동(타 세션 반영).
+- 앱 `lib/naver.ts`: `verifyNaverToken(tokenHash)` 분리 + 1회용 토큰 중복 verify 가드(`consumed` Set).
+- 앱 `lib/auth.tsx`: **전역 딥링크 리스너**(`Linking.addEventListener`+`getInitialURL`) 추가 →
+  `token_hash` 도착 시 `verifyNaverToken` 호출 + `WebBrowser.dismissBrowser()`.
+
+**계측 결과 (2026-06-25)**: 딥링크는 앱 시작 시엔 도착(`token_hash=none`=실행 URL)하지만,
+네이버 복귀 후엔 `[Naver] result`도 새 딥링크도 안 찍히고 멈춤. → `openAuthSessionAsync` 의
+**ASWebAuthenticationSession(샌드박스)**가 우리 콜백의 커스텀 스킴 복귀를 가로채지도
+외부로 내보내지도 못하고 삼켜버림(구글·카카오는 Supabase 동일도메인 302라 OK).
+
+**최종 해결 (검증 완료, dev build)**:
+- **Expo Go 에선 불가** — 터널 `exp://...exp.direct` 복귀를 Safari/ASWebAuth 둘 다 못 엶(환경 한계).
+  구글·카카오만 Supabase 동일도메인 처리라 예외적으로 동작.
+- **dev build (`npx expo run:ios`)** 로 전환 → 앱이 **진짜 네이티브 스킴 `clipnote://`** 등록.
+- `lib/naver.ts` — `openBrowserAsync`(SFSafari)로 authorize 열기. 콜백이 `clipnote://auth/naver?token_hash=`
+  로 이동하면 iOS 가 앱을 확실히 열어줌.
+- 복귀 처리는 **`app/auth/naver.tsx` 화면**(expo-router 가 딥링크를 이 라우트로 보냄) — `verifyNaverToken`
+  으로 세션 생성 후 `dismissBrowser` + 홈 이동. (`_layout.tsx` 에 `auth/naver` Stack.Screen, headerShown:false)
+- `lib/auth.tsx` 의 수동 딥링크 리스너는 라우트 핸들러로 대체(제거). `lib/naver.ts` 의 `verifyNaverToken`
+  는 1회용 토큰 중복 가드 유지.
+- 검증 로그: `returnUrl=clipnote://auth/naver` → `token_hash present` → `verify {ok:true}` → 홈. ✅
+
+> 주의: dev build 부터 스킴이 `exp://`→`clipnote://` 이므로 **Supabase Redirect URLs 에 `clipnote://` 추가** 필요
+> (구글·카카오 복귀용). 네이버는 우리 콜백 경유라 무관.
+> Xcode 환경: `xcodebuild -downloadPlatform iOS` 로 iOS 플랫폼 SDK 설치 필요했음(시뮬레이터 destination 누락 해결).
+
 ## 5. 영향/구조 (예정)
 
 ```
