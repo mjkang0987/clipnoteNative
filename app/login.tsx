@@ -12,6 +12,7 @@ import * as Linking from "expo-linking";
 import { supabase, supabaseConfigured } from "@/lib/supabase";
 import { signInWithNaver } from "@/lib/naver";
 import { useAuth } from "@/lib/auth";
+import BrandLogo from "@/components/BrandLogo";
 import { colors, radius } from "@/lib/theme";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -111,9 +112,10 @@ export default function Login() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>
-        Clip<Text style={styles.brand}>Note</Text> 로그인
-      </Text>
+      <View style={styles.titleRow}>
+        <BrandLogo size={22} />
+        <Text style={styles.title}> 로그인</Text>
+      </View>
       <Text style={styles.sub}>
         {KAKAO_ENABLED
           ? "Google·카카오 계정으로 간편하게 시작하세요."
@@ -211,7 +213,8 @@ const styles = StyleSheet.create({
   center: { flex: 1, backgroundColor: colors.bg, alignItems: "center", justifyContent: "center", gap: 12 },
   dim: { fontSize: 14, color: colors.fgMuted },
 
-  title: { fontSize: 22, fontWeight: "700", color: colors.fg, textAlign: "center" },
+  titleRow: { flexDirection: "row", alignItems: "center", justifyContent: "center" },
+  title: { fontSize: 22, fontWeight: "700", color: colors.fg },
   brand: { color: colors.brand },
   sub: { marginTop: 8, fontSize: 14, color: colors.fgMuted, textAlign: "center" },
 

@@ -1,9 +1,13 @@
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import BrandLogo from "@/components/BrandLogo";
 import { colors, radius } from "@/lib/theme";
 
 export default function About() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+      <View style={styles.brand}>
+        <BrandLogo size={24} />
+      </View>
       <Text style={styles.title}>ClipNote란?</Text>
       <Text style={styles.paragraph}>
         ClipNote(클립노트)는 긴 URL을 공유하기 좋은 형태로 바꿔 주는 무료
@@ -55,6 +59,7 @@ export default function About() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg },
   content: { padding: 20, paddingBottom: 48 },
+  brand: { marginBottom: 16 },
   title: { fontSize: 18, fontWeight: "700", color: colors.fg },
   mt24: { marginTop: 24 },
   paragraph: { marginTop: 10, fontSize: 14, lineHeight: 22, color: colors.fgMuted },

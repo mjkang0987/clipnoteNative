@@ -6,6 +6,7 @@ import HeaderMenu from "@/components/HeaderMenu";
 import HeaderClipsLink from "@/components/HeaderClipsLink";
 import HeaderNewClip from "@/components/HeaderNewClip";
 import MigrateLocalClips from "@/components/MigrateLocalClips";
+import BrandLogo from "@/components/BrandLogo";
 import { colors } from "@/lib/theme";
 
 export default function RootLayout() {
@@ -27,6 +28,7 @@ export default function RootLayout() {
             name="index"
             options={{
               title: "ClipNote",
+              headerTitle: () => <BrandLogo />,
               headerLeft: () => <HeaderMenu />,
               headerRight: () => <HeaderClipsLink />,
             }}
