@@ -11,6 +11,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Image } from "expo-image";
 import * as WebBrowser from "expo-web-browser";
+import * as Clipboard from "expo-clipboard";
 import { Swipeable } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -29,8 +30,15 @@ export default function Clips() {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [tagModal, setTagModal] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  async function copyUrl(url: string) {
+    await Clipboard.setStringAsync(url);
+    setCopiedUrl(url);
+    setTimeout(() => setCopiedUrl((u) => (u === url ? null : u)), 1500);
+  }
 
   useFocusEffect(
     useCallback(() => {
@@ -152,51 +160,73 @@ export default function Clips() {
           const isSel = selected.includes(clip.url);
 
           const card = (
-            <Pressable
-              onPress={() =>
-                selectMode ? toggle(clip.url) : WebBrowser.openBrowserAsync(clip.url)
-              }
-              onLongPress={() => {
-                if (!selectMode) enterSelect(clip.url);
-              }}
-              style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-            >
-              {selectMode && (
-                <View style={[styles.checkbox, isSel && styles.checkboxOn]}>
-                  {isSel && <Text style={styles.checkMark}>✓</Text>}
-                </View>
-              )}
-              <View style={styles.thumb}>
-                <LinearGradient
-                  colors={[g.from, g.to]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={StyleSheet.absoluteFill}
-                />
-                {!!clip.image && (
-                  <Image source={{ uri: clip.image }} style={styles.thumbImg} contentFit="cover" />
-                )}
-              </View>
-
-              <View style={styles.body}>
-                <Text style={styles.title} numberOfLines={1}>
-                  {clip.title}
-                </Text>
-                <Text style={styles.host} numberOfLines={1}>
-                  {prettyHost(clip.url)}
-                </Text>
-                {clip.tags.length > 0 && (
-                  <View style={styles.tagRow}>
-                    {clip.tags.map((t) => (
-                      <View key={t} style={styles.tag}>
-                        <Text style={styles.tagText}>{t}</Text>
-                      </View>
-                    ))}
+            <View style={styles.card}>
+              <Pressable
+                onPress={() => {
+                  if (selectMode) toggle(clip.url);
+                }}
+                onLongPress={() => {
+                  if (!selectMode) enterSelect(clip.url);
+                }}
+                style={({ pressed }) => [styles.cardMain, pressed && styles.cardPressed]}
+              >
+                {selectMode && (
+                  <View style={[styles.checkbox, isSel && styles.checkboxOn]}>
+                    {isSel && <Text style={styles.checkMark}>✓</Text>}
                   </View>
                 )}
-              </View>
-              {!selectMode && <Text style={styles.swipeHint}>‹</Text>}
-            </Pressable>
+                <View style={styles.thumb}>
+                  <LinearGradient
+                    colors={[g.from, g.to]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={StyleSheet.absoluteFill}
+                  />
+                  {!!clip.image && (
+                    <Image source={{ uri: clip.image }} style={styles.thumbImg} contentFit="cover" />
+                  )}
+                </View>
+
+                <View style={styles.body}>
+                  <Text style={styles.title} numberOfLines={1}>
+                    {clip.title}
+                  </Text>
+                  <Text style={styles.host} numberOfLines={1}>
+                    {prettyHost(clip.url)}
+                  </Text>
+                  {clip.tags.length > 0 && (
+                    <View style={styles.tagRow}>
+                      {clip.tags.map((t) => (
+                        <View key={t} style={styles.tag}>
+                          <Text style={styles.tagText}>{t}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
+                {!selectMode && <Text style={styles.swipeHint}>‹</Text>}
+              </Pressable>
+
+              {!selectMode && (
+                <View style={styles.cardActions}>
+                  <Pressable
+                    onPress={() => WebBrowser.openBrowserAsync(clip.url)}
+                    style={({ pressed }) => [styles.cardAction, pressed && styles.actionPressed]}
+                  >
+                    <Text style={styles.actionText}>바로가기</Text>
+                  </Pressable>
+                  <View style={styles.actionDivider} />
+                  <Pressable
+                    onPress={() => copyUrl(clip.url)}
+                    style={({ pressed }) => [styles.cardAction, pressed && styles.actionPressed]}
+                  >
+                    <Text style={styles.actionText}>
+                      {copiedUrl === clip.url ? "복사됨 ✓" : "링크 복사"}
+                    </Text>
+                  </Pressable>
+                </View>
+              )}
+            </View>
           );
 
           // 선택 모드에선 스와이프 비활성(탭=선택). 일반 모드만 Swipeable.
@@ -321,16 +351,23 @@ const styles = StyleSheet.create({
   toolCount: { marginLeft: 12, fontSize: 14, color: colors.fgMuted },
 
   card: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
     backgroundColor: colors.surface,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.border,
     borderRadius: radius.md,
-    padding: 12,
+    overflow: "hidden",
   },
+  cardMain: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12 },
   cardPressed: { backgroundColor: colors.border },
+  cardActions: {
+    flexDirection: "row",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  cardAction: { flex: 1, paddingVertical: 11, alignItems: "center", justifyContent: "center" },
+  actionPressed: { backgroundColor: colors.border },
+  actionDivider: { width: StyleSheet.hairlineWidth, backgroundColor: colors.border },
+  actionText: { fontSize: 13, fontWeight: "600", color: colors.brandStrong },
 
   checkbox: {
     width: 22,
