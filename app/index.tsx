@@ -10,8 +10,11 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Image } from "expo-image";
-import { fetchMetadata, type ClipMetadata } from "@/lib/api";
+import { useRouter } from "expo-router";
+import { fetchMetadata, createClip, type ClipMetadata } from "@/lib/api";
 import { addLocalClip } from "@/lib/local-clips";
+import { useAuth } from "@/lib/auth";
+import ShareResultModal from "@/components/ShareResultModal";
 import { colors, pickGradient, radius } from "@/lib/theme";
 
 export default function Home() {
@@ -25,6 +28,14 @@ export default function Home() {
 
   const [cardW, setCardW] = useState(0);
   const [savedLocal, setSavedLocal] = useState(false);
+
+  // 로그인 시 공유 링크 생성
+  const { loggedIn, accessToken } = useAuth();
+  const router = useRouter();
+  const [creating, setCreating] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [savingClip, setSavingClip] = useState(false);
+  const [savedClip, setSavedClip] = useState(false);
 
   const fetchedUrlRef = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -114,6 +125,58 @@ export default function Home() {
     setTimeout(() => setSavedLocal(false), 1800);
   }
 
+  // 로그인: 공유 링크 생성(웹 API). 토큰을 Authorization 헤더로 전달.
+  async function handleCreateShare() {
+    const sendTitle = title.trim() || meta?.title || (hasInput ? prettyHost(url) : "");
+    if (!sendTitle) {
+      setError("공유 링크를 만들려면 제목이 필요해요. 제목을 입력해 주세요.");
+      return;
+    }
+    setCreating(true);
+    setError(null);
+    setSavedClip(false);
+    const res = await createClip(
+      {
+        url: url.trim(),
+        title: sendTitle,
+        description: meta?.description ?? null,
+        image: meta?.image ?? null,
+        siteName: meta?.siteName ?? null,
+        tags,
+        gradient: gradient.name,
+      },
+      accessToken ?? undefined,
+    );
+    setCreating(false);
+    if (res.error || !res.shareUrl) {
+      setError(res.error ?? "공유 링크 생성에 실패했어요.");
+      return;
+    }
+    setShareUrl(res.shareUrl);
+  }
+
+  // 결과 모달의 '내 클립에 저장' — 같은 URL 클립을 saved 처리.
+  async function handleAddClipDb() {
+    const sendTitle = title.trim() || meta?.title || (hasInput ? prettyHost(url) : "");
+    if (!sendTitle) return;
+    setSavingClip(true);
+    const res = await createClip(
+      {
+        url: url.trim(),
+        title: sendTitle,
+        description: meta?.description ?? null,
+        image: meta?.image ?? null,
+        siteName: meta?.siteName ?? null,
+        tags,
+        gradient: gradient.name,
+        save: true,
+      },
+      accessToken ?? undefined,
+    );
+    setSavingClip(false);
+    if (!res.error) setSavedClip(true);
+  }
+
   const noMeta = meta?.source === "none";
 
   // OG 비율(1200:630) 기준 폰트/여백을 카드 너비에 비례 계산 (웹 cqw 대응)
@@ -191,18 +254,30 @@ export default function Home() {
           style={({ pressed }) => [
             styles.primaryBtn,
             pressed && styles.primaryBtnPressed,
-            !hasInput && styles.btnDisabled,
+            (!hasInput || creating) && styles.btnDisabled,
           ]}
-          disabled={!hasInput}
-          onPress={handleSaveLocal}
+          disabled={!hasInput || creating}
+          onPress={loggedIn ? handleCreateShare : handleSaveLocal}
         >
           <Text style={styles.primaryBtnText}>
-            {savedLocal ? "저장됨 ✓" : "이 기기에 저장"}
+            {loggedIn
+              ? creating
+                ? "만드는 중…"
+                : "공유 링크 만들기"
+              : savedLocal
+                ? "저장됨 ✓"
+                : "이 기기에 저장"}
           </Text>
         </Pressable>
-        <Text style={styles.saveHint}>
-          짧은 공유 링크는 로그인 후 만들 수 있어요(다음 단계).
-        </Text>
+        {!loggedIn && (
+          <Text style={styles.saveHint}>
+            짧은 공유 링크는{" "}
+            <Text style={styles.hintLink} onPress={() => router.push("/login")}>
+              로그인
+            </Text>{" "}
+            후 만들 수 있어요.
+          </Text>
+        )}
       </View>
 
       {error && (
@@ -304,6 +379,17 @@ export default function Home() {
           </View>
         </>
       )}
+
+      <ShareResultModal
+        url={shareUrl}
+        saving={savingClip}
+        saved={savedClip}
+        onSave={handleAddClipDb}
+        onClose={() => {
+          setShareUrl(null);
+          setSavedClip(false);
+        }}
+      />
     </ScrollView>
   );
 }
@@ -386,6 +472,7 @@ const styles = StyleSheet.create({
   primaryBtnText: { color: colors.white, fontSize: 15, fontWeight: "600" },
   btnDisabled: { opacity: 0.5 },
   saveHint: { marginTop: 8, fontSize: 12, color: colors.fgMuted, textAlign: "center" },
+  hintLink: { color: colors.brandStrong, fontWeight: "600" },
 
   errorBox: {
     marginTop: 16,
