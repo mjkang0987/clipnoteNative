@@ -202,7 +202,7 @@ export default function Clips() {
         <View style={styles.emptyBox}>
           <Text style={styles.emptyText}>아직 저장한 클립이 없어요.</Text>
           <Pressable
-            onPress={() => router.push("/")}
+            onPress={() => router.replace("/")}
             style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}
           >
             <Text style={styles.btnText}>첫 클립 만들기</Text>

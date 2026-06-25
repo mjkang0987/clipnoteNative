@@ -51,8 +51,9 @@ export default function HeaderMenu() {
     });
   }
 
+  // 상위 섹션 전환은 replace(뒤로가기 스택 누적 방지 — 각 화면에 햄버거).
   function go(href: string) {
-    close(() => router.push(href as never));
+    close(() => router.replace(href as never));
   }
 
   return (
@@ -113,7 +114,7 @@ export default function HeaderMenu() {
                 if (loggedIn) {
                   close(() => signOut());
                 } else {
-                  go("/login");
+                  close(() => router.push("/login")); // 로그인은 뒤로가기 유지
                 }
               }}
               style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}

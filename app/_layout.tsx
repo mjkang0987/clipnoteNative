@@ -28,10 +28,19 @@ export default function RootLayout() {
               headerRight: () => <HeaderClipsLink />,
             }}
           />
-          <Stack.Screen name="clips" options={{ title: "내 클립" }} />
+          <Stack.Screen
+            name="clips"
+            options={{ title: "내 클립", headerLeft: () => <HeaderMenu /> }}
+          />
           <Stack.Screen name="login" options={{ title: "로그인" }} />
-          <Stack.Screen name="about" options={{ title: "소개" }} />
-          <Stack.Screen name="faq" options={{ title: "자주 묻는 질문" }} />
+          <Stack.Screen
+            name="about"
+            options={{ title: "소개", headerLeft: () => <HeaderMenu /> }}
+          />
+          <Stack.Screen
+            name="faq"
+            options={{ title: "자주 묻는 질문", headerLeft: () => <HeaderMenu /> }}
+          />
         </Stack>
       </AuthProvider>
     </GestureHandlerRootView>

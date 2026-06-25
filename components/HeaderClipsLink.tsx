@@ -7,7 +7,7 @@ export default function HeaderClipsLink() {
   const router = useRouter();
   return (
     <Pressable
-      onPress={() => router.push("/clips")}
+      onPress={() => router.replace("/clips")}
       hitSlop={8}
       style={{ paddingHorizontal: 6, paddingVertical: 8 }}
       accessibilityRole="button"
