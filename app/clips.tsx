@@ -164,6 +164,15 @@ export default function Clips() {
     ]);
   }
 
+  // 카드 ⋯ 더보기 → 편집/삭제(발견성: 스와이프 몰라도 가능).
+  function openCardMenu(clip: UClip) {
+    Alert.alert(clip.title, undefined, [
+      { text: "편집", onPress: () => setEditing(clip) },
+      { text: "삭제", style: "destructive", onPress: () => confirmDelete(clip) },
+      { text: "취소", style: "cancel" },
+    ]);
+  }
+
   function confirmBulkDelete() {
     if (selected.length === 0 || !clips) return;
     Alert.alert("클립 삭제", `선택한 ${selected.length}개 클립을 삭제할까요?`, [
@@ -245,11 +254,11 @@ export default function Clips() {
               </Pressable>
               <Text style={styles.toolCount}>{selected.length}개 선택</Text>
             </>
-          ) : (
+          ) : loggedIn ? (
             <Pressable onPress={() => setSelectMode(true)} hitSlop={8} style={styles.toolRight}>
               <Text style={styles.toolLink}>선택</Text>
             </Pressable>
-          )}
+          ) : null}
         </View>
 
         {!selectMode && allTags.length > 0 && (
@@ -287,7 +296,7 @@ export default function Clips() {
                   if (selectMode) toggle(clip.id);
                 }}
                 onLongPress={() => {
-                  if (!selectMode) enterSelect(clip.id);
+                  if (!selectMode && loggedIn) enterSelect(clip.id); // 다중선택은 로그인 전용
                 }}
                 style={({ pressed }) => [styles.cardMain, pressed && styles.cardPressed]}
               >
@@ -324,7 +333,16 @@ export default function Clips() {
                     </View>
                   )}
                 </View>
-                {!selectMode && <Text style={styles.swipeHint}>‹</Text>}
+                {!selectMode && (
+                  <Pressable
+                    onPress={() => openCardMenu(clip)}
+                    hitSlop={10}
+                    style={styles.moreBtn}
+                    accessibilityLabel="더보기"
+                  >
+                    <Text style={styles.moreText}>⋯</Text>
+                  </Pressable>
+                )}
               </Pressable>
 
               {!selectMode && (
@@ -565,6 +583,8 @@ const styles = StyleSheet.create({
   tagText: { fontSize: 12, fontWeight: "500", color: colors.brandStrong },
 
   swipeHint: { fontSize: 18, color: colors.border, paddingLeft: 4 },
+  moreBtn: { paddingHorizontal: 6, paddingVertical: 4 },
+  moreText: { fontSize: 20, fontWeight: "700", color: colors.fgMuted, lineHeight: 20 },
   swipeActions: { flexDirection: "row", alignItems: "stretch", marginLeft: 8, gap: 8 },
   swipeBtn: { width: 68, alignItems: "center", justifyContent: "center", borderRadius: radius.md },
   swipeEdit: { backgroundColor: colors.brand },
