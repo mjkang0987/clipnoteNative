@@ -39,14 +39,25 @@ export default function RootLayout() {
               headerRight: () => <HeaderNewClip />,
             }}
           />
-          <Stack.Screen name="login" options={{ title: "로그인" }} />
+          <Stack.Screen
+            name="login"
+            options={{ title: "로그인", headerRight: () => <HeaderNewClip /> }}
+          />
           <Stack.Screen
             name="about"
-            options={{ title: "소개", headerLeft: () => <HeaderMenu /> }}
+            options={{
+              title: "소개",
+              headerLeft: () => <HeaderMenu />,
+              headerRight: () => <HeaderNewClip />,
+            }}
           />
           <Stack.Screen
             name="faq"
-            options={{ title: "자주 묻는 질문", headerLeft: () => <HeaderMenu /> }}
+            options={{
+              title: "자주 묻는 질문",
+              headerLeft: () => <HeaderMenu />,
+              headerRight: () => <HeaderNewClip />,
+            }}
           />
         </Stack>
       </AuthProvider>
