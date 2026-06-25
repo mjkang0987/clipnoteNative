@@ -16,7 +16,7 @@ import { colors } from "@/lib/theme";
 type Item = { label: string; href: string };
 
 const ITEMS: Item[] = [
-  { label: "홈", href: "/" },
+  { label: "+ 새 클립", href: "/" },
   { label: "내 클립", href: "/clips" },
   { label: "소개", href: "/about" },
   { label: "자주 묻는 질문", href: "/faq" },
