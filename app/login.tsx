@@ -10,6 +10,7 @@ import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
 import { supabase, supabaseConfigured } from "@/lib/supabase";
+import { signInWithNaver } from "@/lib/naver";
 import { useAuth } from "@/lib/auth";
 import { colors, radius } from "@/lib/theme";
 
@@ -22,8 +23,29 @@ export default function Login() {
   const router = useRouter();
   const { loggedIn, signOut } = useAuth();
   const [agreed, setAgreed] = useState(false);
-  const [loading, setLoading] = useState<Provider | null>(null);
+  const [loading, setLoading] = useState<Provider | "naver" | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  async function handleNaver() {
+    if (!agreed) {
+      setError("개인정보처리방침에 동의하셔야 로그인할 수 있어요.");
+      return;
+    }
+    setLoading("naver");
+    setError(null);
+    try {
+      const r = await signInWithNaver();
+      if (r.ok) {
+        router.replace("/");
+      } else if (!r.cancelled) {
+        setError("네이버 로그인을 완료하지 못했어요. 잠시 후 다시 시도해 주세요.");
+      }
+    } catch {
+      setError("네이버 로그인 중 문제가 발생했어요.");
+    } finally {
+      setLoading(null);
+    }
+  }
 
   async function signIn(provider: Provider) {
     if (!supabase) {
@@ -147,6 +169,21 @@ export default function Login() {
         </Pressable>
       )}
 
+      <Pressable
+        onPress={handleNaver}
+        disabled={loading !== null || !agreed}
+        style={({ pressed }) => [
+          styles.oauthBtn,
+          styles.naverBtn,
+          (!agreed || loading !== null) && styles.disabled,
+          pressed && styles.pressed,
+        ]}
+      >
+        <Text style={styles.naverText}>
+          {loading === "naver" ? "이동 중…" : "네이버로 계속하기"}
+        </Text>
+      </Pressable>
+
       {error && <Text style={styles.error}>{error}</Text>}
       {!supabaseConfigured && (
         <Text style={styles.error}>로그인 설정(.env)이 없어 비활성 상태예요.</Text>
@@ -206,6 +243,8 @@ const styles = StyleSheet.create({
   googleText: { fontSize: 16, fontWeight: "600", color: colors.fg },
   kakaoBtn: { backgroundColor: "#FEE500" },
   kakaoText: { fontSize: 16, fontWeight: "600", color: "#191600" },
+  naverBtn: { backgroundColor: "#03C75A" },
+  naverText: { fontSize: 16, fontWeight: "600", color: "#FFFFFF" },
   disabled: { opacity: 0.5 },
 
   error: { marginTop: 14, fontSize: 14, color: colors.danger, textAlign: "center" },
