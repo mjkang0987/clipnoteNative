@@ -12,6 +12,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Image } from "expo-image";
 import * as WebBrowser from "expo-web-browser";
 import { Swipeable } from "react-native-gesture-handler";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   getLocalClips,
   removeLocalClip,
@@ -23,9 +24,11 @@ import { GRADIENTS, colors, pickGradient, radius } from "@/lib/theme";
 export default function Clips() {
   const [clips, setClips] = useState<LocalClip[] | null>(null);
   const [editing, setEditing] = useState<LocalClip | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<string[]>([]);
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
-  // 화면에 들어올 때마다 최신 로컬 클립 로드(저장 직후 반영).
   useFocusEffect(
     useCallback(() => {
       let active = true;
@@ -38,6 +41,18 @@ export default function Clips() {
     }, []),
   );
 
+  function enterSelect(url: string) {
+    setSelectMode(true);
+    setSelected([url]);
+  }
+  function exitSelect() {
+    setSelectMode(false);
+    setSelected([]);
+  }
+  function toggle(url: string) {
+    setSelected((s) => (s.includes(url) ? s.filter((u) => u !== url) : [...s, url]));
+  }
+
   function confirmDelete(clip: LocalClip) {
     Alert.alert("클립 삭제", `‘${clip.title}’ 클립을 삭제할까요?`, [
       { text: "취소", style: "cancel" },
@@ -45,6 +60,23 @@ export default function Clips() {
         text: "삭제",
         style: "destructive",
         onPress: async () => setClips(await removeLocalClip(clip.url)),
+      },
+    ]);
+  }
+
+  function confirmBulkDelete() {
+    if (selected.length === 0) return;
+    Alert.alert("클립 삭제", `선택한 ${selected.length}개 클립을 삭제할까요?`, [
+      { text: "취소", style: "cancel" },
+      {
+        text: "삭제",
+        style: "destructive",
+        onPress: async () => {
+          let list = clips ?? [];
+          for (const url of selected) list = await removeLocalClip(url);
+          setClips(list);
+          exitSelect();
+        },
       },
     ]);
   }
@@ -74,39 +106,49 @@ export default function Clips() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      {clips.map((clip) => {
-        const g =
-          GRADIENTS.find((x) => x.name === clip.gradient) ??
-          pickGradient(clip.title || clip.url);
-        return (
-          <Swipeable
-            key={clip.url}
-            friction={2}
-            rightThreshold={40}
-            renderRightActions={() => (
-              <View style={styles.swipeActions}>
-                <Pressable
-                  onPress={() => setEditing(clip)}
-                  style={[styles.swipeBtn, styles.swipeEdit]}
-                  accessibilityLabel="클립 편집"
-                >
-                  <Text style={styles.swipeText}>편집</Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => confirmDelete(clip)}
-                  style={[styles.swipeBtn, styles.swipeDel]}
-                  accessibilityLabel="클립 삭제"
-                >
-                  <Text style={styles.swipeText}>삭제</Text>
-                </Pressable>
-              </View>
-            )}
-          >
+    <View style={styles.screen}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          selectMode && { paddingBottom: insets.bottom + 88 },
+        ]}
+      >
+        <View style={styles.toolbar}>
+          {selectMode ? (
+            <>
+              <Pressable onPress={exitSelect} hitSlop={8}>
+                <Text style={styles.toolLink}>취소</Text>
+              </Pressable>
+              <Text style={styles.toolCount}>{selected.length}개 선택</Text>
+            </>
+          ) : (
+            <Pressable onPress={() => setSelectMode(true)} hitSlop={8} style={styles.toolRight}>
+              <Text style={styles.toolLink}>선택</Text>
+            </Pressable>
+          )}
+        </View>
+
+        {clips.map((clip) => {
+          const g =
+            GRADIENTS.find((x) => x.name === clip.gradient) ??
+            pickGradient(clip.title || clip.url);
+          const isSel = selected.includes(clip.url);
+
+          const card = (
             <Pressable
-              onPress={() => WebBrowser.openBrowserAsync(clip.url)}
+              onPress={() =>
+                selectMode ? toggle(clip.url) : WebBrowser.openBrowserAsync(clip.url)
+              }
+              onLongPress={() => {
+                if (!selectMode) enterSelect(clip.url);
+              }}
               style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
             >
+              {selectMode && (
+                <View style={[styles.checkbox, isSel && styles.checkboxOn]}>
+                  {isSel && <Text style={styles.checkMark}>✓</Text>}
+                </View>
+              )}
               <View style={styles.thumb}>
                 <LinearGradient
                   colors={[g.from, g.to]}
@@ -136,18 +178,65 @@ export default function Clips() {
                   </View>
                 )}
               </View>
-              <Text style={styles.swipeHint}>‹</Text>
+              {!selectMode && <Text style={styles.swipeHint}>‹</Text>}
             </Pressable>
-          </Swipeable>
-        );
-      })}
+          );
 
-      <EditClipModal
-        clip={editing}
-        onClose={() => setEditing(null)}
-        onSaved={(list) => setClips(list)}
-      />
-    </ScrollView>
+          // 선택 모드에선 스와이프 비활성(탭=선택). 일반 모드만 Swipeable.
+          return selectMode ? (
+            <View key={clip.url}>{card}</View>
+          ) : (
+            <Swipeable
+              key={clip.url}
+              friction={2}
+              rightThreshold={40}
+              renderRightActions={() => (
+                <View style={styles.swipeActions}>
+                  <Pressable
+                    onPress={() => setEditing(clip)}
+                    style={[styles.swipeBtn, styles.swipeEdit]}
+                    accessibilityLabel="클립 편집"
+                  >
+                    <Text style={styles.swipeText}>편집</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => confirmDelete(clip)}
+                    style={[styles.swipeBtn, styles.swipeDel]}
+                    accessibilityLabel="클립 삭제"
+                  >
+                    <Text style={styles.swipeText}>삭제</Text>
+                  </Pressable>
+                </View>
+              )}
+            >
+              {card}
+            </Swipeable>
+          );
+        })}
+
+        <EditClipModal
+          clip={editing}
+          onClose={() => setEditing(null)}
+          onSaved={(list) => setClips(list)}
+        />
+      </ScrollView>
+
+      {selectMode && (
+        <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 10 }]}>
+          <Pressable
+            disabled={selected.length === 0}
+            onPress={confirmBulkDelete}
+            style={({ pressed }) => [
+              styles.bulkBtn,
+              selected.length === 0 && styles.btnDisabled,
+              pressed && styles.pressedDanger,
+            ]}
+          >
+            <Text style={styles.bulkBtnText}>삭제 ({selected.length})</Text>
+          </Pressable>
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -187,6 +276,11 @@ const styles = StyleSheet.create({
   btnPressed: { backgroundColor: colors.brandStrong },
   btnText: { color: colors.white, fontSize: 14, fontWeight: "600" },
 
+  toolbar: { flexDirection: "row", alignItems: "center", minHeight: 28 },
+  toolRight: { marginLeft: "auto" },
+  toolLink: { fontSize: 15, fontWeight: "600", color: colors.brandStrong },
+  toolCount: { marginLeft: 12, fontSize: 14, color: colors.fgMuted },
+
   card: {
     flexDirection: "row",
     alignItems: "center",
@@ -198,6 +292,19 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   cardPressed: { backgroundColor: colors.border },
+
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: radius.full,
+    borderWidth: 2,
+    borderColor: colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkboxOn: { backgroundColor: colors.brand, borderColor: colors.brand },
+  checkMark: { color: colors.white, fontSize: 13, fontWeight: "700" },
+
   thumb: { width: 56, height: 56, borderRadius: 8, overflow: "hidden" },
   thumbImg: { width: "100%", height: "100%" },
   body: { flex: 1, minWidth: 0 },
@@ -223,4 +330,26 @@ const styles = StyleSheet.create({
   swipeEdit: { backgroundColor: colors.brand },
   swipeDel: { backgroundColor: colors.danger },
   swipeText: { color: colors.white, fontSize: 14, fontWeight: "600" },
+
+  bottomBar: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: colors.bg,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+  },
+  bulkBtn: {
+    height: 48,
+    borderRadius: radius.md,
+    backgroundColor: colors.danger,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  btnDisabled: { opacity: 0.4 },
+  pressedDanger: { opacity: 0.85 },
+  bulkBtnText: { color: colors.white, fontSize: 15, fontWeight: "600" },
 });
