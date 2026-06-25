@@ -297,7 +297,7 @@ export default function Clips() {
                   )}
                 </View>
                 <View style={styles.body}>
-                  <Text style={styles.title} numberOfLines={1}>
+                  <Text style={styles.title} numberOfLines={2}>
                     {clip.title}
                   </Text>
                   <Text style={styles.host} numberOfLines={1}>
@@ -336,7 +336,7 @@ export default function Clips() {
                     onPress={() => WebBrowser.openBrowserAsync(clip.url)}
                     style={({ pressed }) => [styles.cardAction, pressed && styles.actionPressed]}
                   >
-                    <Text style={styles.actionText} numberOfLines={1} adjustsFontSizeToFit>
+                    <Text style={styles.actionNeutral} numberOfLines={1} adjustsFontSizeToFit>
                       바로가기
                     </Text>
                   </Pressable>
@@ -345,7 +345,7 @@ export default function Clips() {
                     onPress={() => copyAs(`orig:${clip.id}`, clip.url)}
                     style={({ pressed }) => [styles.cardAction, pressed && styles.actionPressed]}
                   >
-                    <Text style={styles.actionText} numberOfLines={1} adjustsFontSizeToFit>
+                    <Text style={styles.actionMuted} numberOfLines={1} adjustsFontSizeToFit>
                       {copiedKey === `orig:${clip.id}` ? "복사됨 ✓" : "원본 링크 복사"}
                     </Text>
                   </Pressable>
@@ -527,6 +527,8 @@ const styles = StyleSheet.create({
   actionPressed: { backgroundColor: colors.border },
   actionDivider: { width: StyleSheet.hairlineWidth, backgroundColor: colors.border },
   actionText: { fontSize: 13, fontWeight: "600", color: colors.brandStrong },
+  actionNeutral: { fontSize: 13, fontWeight: "600", color: colors.fg },
+  actionMuted: { fontSize: 13, fontWeight: "600", color: colors.fgMuted },
 
   checkbox: {
     width: 22,
