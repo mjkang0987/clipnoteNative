@@ -14,8 +14,12 @@ export default function MigrateLocalClips() {
   const handledRef = useRef(false);
 
   useEffect(() => {
-    if (!loggedIn || !accessToken || handledRef.current) return;
-    handledRef.current = true; // 세션당 1회만
+    if (!loggedIn) {
+      handledRef.current = false; // 로그아웃 시 리셋 → 다음 로그인에 다시 확인
+      return;
+    }
+    if (!accessToken || handledRef.current) return;
+    handledRef.current = true; // 로그인 1회만
 
     (async () => {
       const local = await getLocalClips();
