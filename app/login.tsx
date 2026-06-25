@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -26,22 +26,31 @@ export default function Login() {
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState<Provider | "naver" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // 네이버는 딥링크 리스너(lib/auth.tsx)가 비동기로 로그인을 완료한다.
+  // 이 화면에서 시작한 네이버 로그인이 성공하면 홈으로 보낸다(이미 로그인된
+  // 사용자가 들어온 경우와 구분하기 위해 ref 로 "진행 중"을 표시).
+  const naverPending = useRef(false);
+
+  useEffect(() => {
+    if (loggedIn && naverPending.current) {
+      naverPending.current = false;
+      router.replace("/");
+    }
+  }, [loggedIn, router]);
 
   async function handleNaver() {
     if (!agreed) {
       setError("개인정보처리방침에 동의하셔야 로그인할 수 있어요.");
       return;
     }
+    naverPending.current = true;
     setLoading("naver");
     setError(null);
     try {
-      const r = await signInWithNaver();
-      if (r.ok) {
-        router.replace("/");
-      } else if (!r.cancelled) {
-        setError("네이버 로그인을 완료하지 못했어요. 잠시 후 다시 시도해 주세요.");
-      }
+      // 브라우저를 연다. 완료는 딥링크 리스너 → onAuthStateChange → 위 useEffect 가 처리.
+      await signInWithNaver();
     } catch {
+      naverPending.current = false;
       setError("네이버 로그인 중 문제가 발생했어요.");
     } finally {
       setLoading(null);

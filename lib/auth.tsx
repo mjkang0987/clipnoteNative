@@ -43,6 +43,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     return () => sub.subscription.unsubscribe();
   }, []);
+  // 네이버 로그인 딥링크(`clipnote://auth/naver?token_hash=...`) 복귀는
+  // expo-router 가 `app/auth/naver.tsx` 화면으로 라우팅해 처리한다.
 
   const signOut = useCallback(async () => {
     await supabase?.auth.signOut();

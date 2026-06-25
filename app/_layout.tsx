@@ -65,6 +65,7 @@ export default function RootLayout() {
               headerRight: () => <HeaderNewClip />,
             }}
           />
+          <Stack.Screen name="auth/naver" options={{ headerShown: false }} />
         </Stack>
       </AuthProvider>
     </GestureHandlerRootView>
