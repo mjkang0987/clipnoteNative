@@ -11,6 +11,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Image } from "expo-image";
 import * as WebBrowser from "expo-web-browser";
+import { Swipeable } from "react-native-gesture-handler";
 import {
   getLocalClips,
   removeLocalClip,
@@ -79,60 +80,65 @@ export default function Clips() {
           GRADIENTS.find((x) => x.name === clip.gradient) ??
           pickGradient(clip.title || clip.url);
         return (
-          <Pressable
+          <Swipeable
             key={clip.url}
-            onPress={() => WebBrowser.openBrowserAsync(clip.url)}
-            style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+            friction={2}
+            rightThreshold={40}
+            renderRightActions={() => (
+              <View style={styles.swipeActions}>
+                <Pressable
+                  onPress={() => setEditing(clip)}
+                  style={[styles.swipeBtn, styles.swipeEdit]}
+                  accessibilityLabel="클립 편집"
+                >
+                  <Text style={styles.swipeText}>편집</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => confirmDelete(clip)}
+                  style={[styles.swipeBtn, styles.swipeDel]}
+                  accessibilityLabel="클립 삭제"
+                >
+                  <Text style={styles.swipeText}>삭제</Text>
+                </Pressable>
+              </View>
+            )}
           >
-            <View style={styles.thumb}>
-              <LinearGradient
-                colors={[g.from, g.to]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFill}
-              />
-              {!!clip.image && (
-                <Image source={{ uri: clip.image }} style={styles.thumbImg} contentFit="cover" />
-              )}
-            </View>
+            <Pressable
+              onPress={() => WebBrowser.openBrowserAsync(clip.url)}
+              style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+            >
+              <View style={styles.thumb}>
+                <LinearGradient
+                  colors={[g.from, g.to]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={StyleSheet.absoluteFill}
+                />
+                {!!clip.image && (
+                  <Image source={{ uri: clip.image }} style={styles.thumbImg} contentFit="cover" />
+                )}
+              </View>
 
-            <View style={styles.body}>
-              <Text style={styles.title} numberOfLines={1}>
-                {clip.title}
-              </Text>
-              <Text style={styles.host} numberOfLines={1}>
-                {prettyHost(clip.url)}
-              </Text>
-              {clip.tags.length > 0 && (
-                <View style={styles.tagRow}>
-                  {clip.tags.map((t) => (
-                    <View key={t} style={styles.tag}>
-                      <Text style={styles.tagText}>{t}</Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-            </View>
-
-            <View style={styles.actions}>
-              <Pressable
-                onPress={() => setEditing(clip)}
-                hitSlop={8}
-                style={styles.action}
-                accessibilityLabel="클립 편집"
-              >
-                <Text style={styles.editText}>편집</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => confirmDelete(clip)}
-                hitSlop={8}
-                style={styles.action}
-                accessibilityLabel="클립 삭제"
-              >
-                <Text style={styles.delText}>삭제</Text>
-              </Pressable>
-            </View>
-          </Pressable>
+              <View style={styles.body}>
+                <Text style={styles.title} numberOfLines={1}>
+                  {clip.title}
+                </Text>
+                <Text style={styles.host} numberOfLines={1}>
+                  {prettyHost(clip.url)}
+                </Text>
+                {clip.tags.length > 0 && (
+                  <View style={styles.tagRow}>
+                    {clip.tags.map((t) => (
+                      <View key={t} style={styles.tag}>
+                        <Text style={styles.tagText}>{t}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+              <Text style={styles.swipeHint}>‹</Text>
+            </Pressable>
+          </Swipeable>
         );
       })}
 
@@ -206,8 +212,15 @@ const styles = StyleSheet.create({
   },
   tagText: { fontSize: 12, fontWeight: "500", color: colors.brandStrong },
 
-  actions: { alignItems: "flex-end", gap: 10, paddingLeft: 4 },
-  action: { paddingHorizontal: 4, paddingVertical: 2 },
-  editText: { fontSize: 13, fontWeight: "500", color: colors.brandStrong },
-  delText: { fontSize: 13, fontWeight: "500", color: colors.danger },
+  swipeHint: { fontSize: 18, color: colors.border, paddingLeft: 4 },
+  swipeActions: { flexDirection: "row", alignItems: "stretch", marginLeft: 8, gap: 8 },
+  swipeBtn: {
+    width: 68,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radius.md,
+  },
+  swipeEdit: { backgroundColor: colors.brand },
+  swipeDel: { backgroundColor: colors.danger },
+  swipeText: { color: colors.white, fontSize: 14, fontWeight: "600" },
 });

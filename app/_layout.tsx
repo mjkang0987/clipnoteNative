@@ -1,12 +1,13 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import HeaderMenu from "@/components/HeaderMenu";
 import HeaderClipsLink from "@/components/HeaderClipsLink";
 import { colors } from "@/lib/theme";
 
 export default function RootLayout() {
   return (
-    <>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style="dark" />
       <Stack
         screenOptions={{
@@ -29,6 +30,6 @@ export default function RootLayout() {
         <Stack.Screen name="about" options={{ title: "소개" }} />
         <Stack.Screen name="faq" options={{ title: "자주 묻는 질문" }} />
       </Stack>
-    </>
+    </GestureHandlerRootView>
   );
 }
