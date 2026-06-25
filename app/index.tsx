@@ -36,6 +36,9 @@ export default function Home() {
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [savingClip, setSavingClip] = useState(false);
   const [savedClip, setSavedClip] = useState(false);
+  // 홈에서 바로 '내 클립에 저장'(공유 카드 없이)
+  const [savingDirect, setSavingDirect] = useState(false);
+  const [directSaved, setDirectSaved] = useState(false);
 
   const fetchedUrlRef = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -177,6 +180,37 @@ export default function Home() {
     if (!res.error) setSavedClip(true);
   }
 
+  // 로그인: 공유 카드 없이 바로 내 클립(DB)에 저장.
+  async function handleSaveToClips() {
+    const sendTitle = title.trim() || meta?.title || (hasInput ? prettyHost(url) : "");
+    if (!sendTitle) {
+      setError("저장하려면 제목이 필요해요. 제목을 입력해 주세요.");
+      return;
+    }
+    setSavingDirect(true);
+    setError(null);
+    const res = await createClip(
+      {
+        url: url.trim(),
+        title: sendTitle,
+        description: meta?.description ?? null,
+        image: meta?.image ?? null,
+        siteName: meta?.siteName ?? null,
+        tags,
+        gradient: gradient.name,
+        save: true,
+      },
+      accessToken ?? undefined,
+    );
+    setSavingDirect(false);
+    if (res.error) {
+      setError(res.error);
+      return;
+    }
+    setDirectSaved(true);
+    setTimeout(() => setDirectSaved(false), 1800);
+  }
+
   const noMeta = meta?.source === "none";
 
   // OG 비율(1200:630) 기준 폰트/여백을 카드 너비에 비례 계산 (웹 cqw 대응)
@@ -250,33 +284,60 @@ export default function Home() {
           </View>
         )}
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.primaryBtn,
-            pressed && styles.primaryBtnPressed,
-            (!hasInput || creating) && styles.btnDisabled,
-          ]}
-          disabled={!hasInput || creating}
-          onPress={loggedIn ? handleCreateShare : handleSaveLocal}
-        >
-          <Text style={styles.primaryBtnText}>
-            {loggedIn
-              ? creating
-                ? "만드는 중…"
-                : "공유 링크 만들기"
-              : savedLocal
-                ? "저장됨 ✓"
-                : "이 기기에 저장"}
-          </Text>
-        </Pressable>
-        {!loggedIn && (
-          <Text style={styles.saveHint}>
-            짧은 공유 링크는{" "}
-            <Text style={styles.hintLink} onPress={() => router.push("/login")}>
-              로그인
-            </Text>{" "}
-            후 만들 수 있어요.
-          </Text>
+        {loggedIn ? (
+          <View style={styles.btnRow}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.actionBtn,
+                styles.sharePrimary,
+                pressed && styles.primaryBtnPressed,
+                (!hasInput || creating) && styles.btnDisabled,
+              ]}
+              disabled={!hasInput || creating}
+              onPress={handleCreateShare}
+            >
+              <Text style={styles.primaryBtnText}>
+                {creating ? "만드는 중…" : "공유 링크 만들기"}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [
+                styles.actionBtn,
+                styles.saveSecondary,
+                pressed && styles.pressed,
+                (!hasInput || savingDirect) && styles.btnDisabled,
+              ]}
+              disabled={!hasInput || savingDirect}
+              onPress={handleSaveToClips}
+            >
+              <Text style={styles.secondaryBtnText}>
+                {directSaved ? "저장됨 ✓" : savingDirect ? "저장 중…" : "내 클립에 저장"}
+              </Text>
+            </Pressable>
+          </View>
+        ) : (
+          <>
+            <Pressable
+              style={({ pressed }) => [
+                styles.primaryBtn,
+                pressed && styles.primaryBtnPressed,
+                !hasInput && styles.btnDisabled,
+              ]}
+              disabled={!hasInput}
+              onPress={handleSaveLocal}
+            >
+              <Text style={styles.primaryBtnText}>
+                {savedLocal ? "저장됨 ✓" : "이 기기에 저장"}
+              </Text>
+            </Pressable>
+            <Text style={styles.saveHint}>
+              짧은 공유 링크는{" "}
+              <Text style={styles.hintLink} onPress={() => router.push("/login")}>
+                로그인
+              </Text>{" "}
+              후 만들 수 있어요.
+            </Text>
+          </>
         )}
       </View>
 
@@ -471,6 +532,16 @@ const styles = StyleSheet.create({
   primaryBtnPressed: { backgroundColor: colors.brandStrong },
   primaryBtnText: { color: colors.white, fontSize: 15, fontWeight: "600" },
   btnDisabled: { opacity: 0.5 },
+  btnRow: { flexDirection: "row", gap: 8, marginTop: 16 },
+  actionBtn: { flex: 1, height: 48, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+  sharePrimary: { backgroundColor: colors.brand },
+  saveSecondary: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.brand,
+    backgroundColor: colors.brandSoft,
+  },
+  secondaryBtnText: { color: colors.brandStrong, fontSize: 15, fontWeight: "600" },
+  pressed: { opacity: 0.85 },
   saveHint: { marginTop: 8, fontSize: 12, color: colors.fgMuted, textAlign: "center" },
   hintLink: { color: colors.brandStrong, fontWeight: "600" },
 
