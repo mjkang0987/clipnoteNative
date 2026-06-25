@@ -64,6 +64,15 @@ export async function updateLocalClip(
   return list;
 }
 
+/** 로컬 클립 전체 비우기(로그인 마이그레이션 후 호출). */
+export async function clearLocalClips(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(KEY);
+  } catch {
+    // 무시
+  }
+}
+
 async function save(list: LocalClip[]): Promise<void> {
   try {
     await AsyncStorage.setItem(KEY, JSON.stringify(list));

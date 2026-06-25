@@ -5,12 +5,14 @@ import { AuthProvider } from "@/lib/auth";
 import HeaderMenu from "@/components/HeaderMenu";
 import HeaderClipsLink from "@/components/HeaderClipsLink";
 import HeaderNewClip from "@/components/HeaderNewClip";
+import MigrateLocalClips from "@/components/MigrateLocalClips";
 import { colors } from "@/lib/theme";
 
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>
+        <MigrateLocalClips />
         <StatusBar style="dark" />
         <Stack
           screenOptions={{
