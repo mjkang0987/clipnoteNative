@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
 import {
   Alert,
@@ -21,6 +21,7 @@ import {
 } from "@/lib/local-clips";
 import { getClips, updateClip, deleteClip, API_BASE } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { onClipsRefresh } from "@/lib/clips-refresh";
 import EditClipModal from "@/components/EditClipModal";
 import TagApplyModal from "@/components/TagApplyModal";
 import { GRADIENTS, colors, pickGradient, radius } from "@/lib/theme";
@@ -100,6 +101,9 @@ export default function Clips() {
   async function reload() {
     setClips(await load());
   }
+
+  // 외부 신호(마이그레이션 등)로 즉시 갱신.
+  useEffect(() => onClipsRefresh(() => load().then(setClips)), [load]);
 
   function enterSelect(id: string) {
     setSelectMode(true);

@@ -3,6 +3,7 @@ import { Alert } from "react-native";
 import { useAuth } from "@/lib/auth";
 import { getLocalClips, clearLocalClips } from "@/lib/local-clips";
 import { createClip } from "@/lib/api";
+import { emitClipsRefresh } from "@/lib/clips-refresh";
 
 /**
  * 게스트가 로그인하면 이 기기에 저장한 로컬 클립을 계정(DB)으로 옮길지 한 번 물어본다.
@@ -44,6 +45,7 @@ export default function MigrateLocalClips() {
                 );
               }
               await clearLocalClips();
+              emitClipsRefresh(); // 내 클립 화면이 떠 있으면 즉시 갱신
               Alert.alert("완료", "클립을 계정으로 옮겼어요.");
             },
           },
