@@ -31,6 +31,7 @@ export default function Clips() {
   const [selected, setSelected] = useState<string[]>([]);
   const [tagModal, setTagModal] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+  const [activeTag, setActiveTag] = useState<string | null>(null);
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -130,6 +131,12 @@ export default function Clips() {
     );
   }
 
+  const allTags = Array.from(new Set(clips.flatMap((c) => c.tags)));
+  const filtered =
+    activeTag && allTags.includes(activeTag)
+      ? clips.filter((c) => c.tags.includes(activeTag))
+      : clips;
+
   return (
     <View style={styles.screen}>
       <ScrollView
@@ -153,7 +160,33 @@ export default function Clips() {
           )}
         </View>
 
-        {clips.map((clip) => {
+        {!selectMode && allTags.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterRow}
+          >
+            <FilterChip
+              label="전체"
+              active={activeTag === null}
+              onPress={() => setActiveTag(null)}
+            />
+            {allTags.map((t) => (
+              <FilterChip
+                key={t}
+                label={t}
+                active={activeTag === t}
+                onPress={() => setActiveTag(t)}
+              />
+            ))}
+          </ScrollView>
+        )}
+
+        {filtered.length === 0 ? (
+          <Text style={styles.filterEmpty}>‘{activeTag}’ 태그의 클립이 없어요.</Text>
+        ) : null}
+
+        {filtered.map((clip) => {
           const g =
             GRADIENTS.find((x) => x.name === clip.gradient) ??
             pickGradient(clip.title || clip.url);
@@ -309,6 +342,27 @@ export default function Clips() {
   );
 }
 
+function FilterChip({
+  label,
+  active,
+  onPress,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} style={[styles.filterChip, active && styles.filterChipOn]}>
+      <Text
+        style={[styles.filterChipText, active && styles.filterChipTextOn]}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 function prettyHost(raw: string): string {
   try {
     const u = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
@@ -349,6 +403,20 @@ const styles = StyleSheet.create({
   toolRight: { marginLeft: "auto" },
   toolLink: { fontSize: 15, fontWeight: "600", color: colors.brandStrong },
   toolCount: { marginLeft: 12, fontSize: 14, color: colors.fgMuted },
+
+  filterRow: { gap: 8, alignItems: "center" },
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: radius.full,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    backgroundColor: colors.bg,
+  },
+  filterChipOn: { backgroundColor: colors.brand, borderColor: colors.brand },
+  filterChipText: { fontSize: 13, fontWeight: "500", color: colors.fgMuted },
+  filterChipTextOn: { color: colors.white },
+  filterEmpty: { marginTop: 24, fontSize: 14, color: colors.fgMuted, textAlign: "center" },
 
   card: {
     backgroundColor: colors.surface,
