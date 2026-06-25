@@ -48,3 +48,4 @@ clipnoteNative/
 - 2026-06-24: 소개(about)/FAQ(faq) 페이지 분리 + 헤더 햄버거 메뉴(HeaderMenu). expo-linear-gradient ~56.0.4 고정, package-lock 커밋.
 - 2026-06-24: 햄버거를 좌측 슬라이드 사이드 메뉴(다크 배경)로, backdrop 닫기. '내 클립' 메뉴/헤더 바로가기 추가.
 - 2026-06-24: Phase 1 마무리 — 게스트 로컬 저장(AsyncStorage 2.2.0, lib/local-clips), 홈 '이 기기에 저장', 내 클립 카드 리스트(웹과 동일 카드 + 삭제 + 탭 시 원본 열기). 실기기(시뮬레이터)에서 저장→조회 확인.
+- 2026-06-24: 내 클립 편집 — A) 단건 편집 모달(제목·태그, EditClipModal), 스와이프 편집/삭제(react-native-gesture-handler ~2.31.1). B) 선택 모드(선택 버튼+롱프레스)+일괄 삭제. C) 태그 일괄 적용(추가/교체, TagApplyModal). lib/local-clips 에 updateLocalClip 추가. 실기기 확인.
