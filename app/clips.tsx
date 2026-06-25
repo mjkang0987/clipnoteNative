@@ -19,7 +19,7 @@ import {
   removeLocalClip,
   updateLocalClip,
 } from "@/lib/local-clips";
-import { getClips, updateClip, deleteClip } from "@/lib/api";
+import { getClips, updateClip, deleteClip, API_BASE } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import EditClipModal from "@/components/EditClipModal";
 import TagApplyModal from "@/components/TagApplyModal";
@@ -48,6 +48,7 @@ export default function Clips() {
   const [selected, setSelected] = useState<string[]>([]);
   const [tagModal, setTagModal] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [makingShared, setMakingShared] = useState<string | null>(null);
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -119,14 +120,20 @@ export default function Clips() {
     setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 1500);
   }
 
-  // 새 공유 액션(만들기/복사)은 백엔드 연결 전 placeholder — 버튼만.
-  function sharePlaceholder(kind: "create" | "copy") {
-    Alert.alert(
-      "준비 중",
-      kind === "create"
-        ? "‘공유 링크 만들기’는 곧 연결돼요."
-        : "‘공유 링크 복사’는 곧 연결돼요.",
-    );
+  // 공유 링크 복사 — 브릿지 URL(clipnote.co.kr/{slug}) 클립보드 복사.
+  function copyShare(clip: UClip) {
+    if (!clip.slug) return;
+    void copyAs(`share:${clip.id}`, `${API_BASE}/${clip.slug}`);
+  }
+
+  // 공유 링크 만들기 — shared=true 로 켜기(브릿지 공개) → 목록 새로고침.
+  async function makeShared(clip: UClip) {
+    if (!clip.slug) return;
+    setMakingShared(clip.id);
+    const ok = await updateClip(clip.slug, { shared: true }, accessToken ?? undefined);
+    setMakingShared(null);
+    if (ok) await reload();
+    else Alert.alert("실패", "공유 링크를 켜지 못했어요. 잠시 후 다시 시도해 주세요.");
   }
 
   async function removeOne(clip: UClip) {
@@ -322,11 +329,17 @@ export default function Clips() {
                   {!clip.local && (
                     <>
                       <Pressable
-                        onPress={() => sharePlaceholder(clip.shared ? "copy" : "create")}
+                        onPress={() => (clip.shared ? copyShare(clip) : makeShared(clip))}
                         style={({ pressed }) => [styles.cardAction, pressed && styles.actionPressed]}
                       >
                         <Text style={styles.actionText} numberOfLines={1} adjustsFontSizeToFit>
-                          {clip.shared ? "공유 링크 복사" : "공유 링크 만들기"}
+                          {clip.shared
+                            ? copiedKey === `share:${clip.id}`
+                              ? "복사됨 ✓"
+                              : "공유 링크 복사"
+                            : makingShared === clip.id
+                              ? "켜는 중…"
+                              : "공유 링크 만들기"}
                         </Text>
                       </Pressable>
                       <View style={styles.actionDivider} />

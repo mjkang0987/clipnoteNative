@@ -114,7 +114,7 @@ export async function getClips(
 /** DB 클립 수정(제목·태그). PATCH /api/clip/[slug]. */
 export async function updateClip(
   slug: string,
-  patch: { title?: string; tags?: string[] },
+  patch: { title?: string; tags?: string[]; shared?: boolean },
   accessToken?: string,
 ): Promise<boolean> {
   const res = await fetch(`${API_BASE}/api/clip/${slug}`, {
