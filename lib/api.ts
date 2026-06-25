@@ -92,6 +92,7 @@ export type DbClip = {
   gradient: string;
   tags: string[];
   saved: boolean;
+  shared: boolean; // 공개 브릿지 링크(/[slug]) 켜졌는지. 저장만 한 클립은 false
   createdAt: string;
 };
 

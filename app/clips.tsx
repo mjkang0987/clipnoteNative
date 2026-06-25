@@ -36,6 +36,7 @@ type UClip = {
   siteName: string | null;
   gradient: string;
   tags: string[];
+  shared: boolean; // 공개 브릿지 링크 켜졌는지(DB). 로컬은 항상 false.
   local: boolean;
 };
 
@@ -46,7 +47,7 @@ export default function Clips() {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [tagModal, setTagModal] = useState(false);
-  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -64,6 +65,7 @@ export default function Clips() {
         siteName: c.siteName,
         gradient: c.gradient,
         tags: c.tags ?? [],
+        shared: c.shared ?? true,
         local: false,
       }));
     }
@@ -77,6 +79,7 @@ export default function Clips() {
       siteName: c.siteName,
       gradient: c.gradient,
       tags: c.tags ?? [],
+      shared: false,
       local: true,
     }));
   }, [loggedIn, accessToken]);
@@ -109,10 +112,21 @@ export default function Clips() {
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   }
 
-  async function copy(url: string) {
-    await Clipboard.setStringAsync(url);
-    setCopiedUrl(url);
-    setTimeout(() => setCopiedUrl((u) => (u === url ? null : u)), 1500);
+  // key 별 복사 피드백(원본/공유 구분). value = 복사할 텍스트.
+  async function copyAs(key: string, text: string) {
+    await Clipboard.setStringAsync(text);
+    setCopiedKey(key);
+    setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 1500);
+  }
+
+  // 새 공유 액션(만들기/복사)은 백엔드 연결 전 placeholder — 버튼만.
+  function sharePlaceholder(kind: "create" | "copy") {
+    Alert.alert(
+      "준비 중",
+      kind === "create"
+        ? "‘공유 링크 만들기’는 곧 연결돼요."
+        : "‘공유 링크 복사’는 곧 연결돼요.",
+    );
   }
 
   async function removeOne(clip: UClip) {
@@ -304,19 +318,35 @@ export default function Clips() {
 
               {!selectMode && (
                 <View style={styles.cardActions}>
+                  {/* DB 클립만 공유 액션 노출. shared=true→복사, false→만들기. (로컬은 없음) */}
+                  {!clip.local && (
+                    <>
+                      <Pressable
+                        onPress={() => sharePlaceholder(clip.shared ? "copy" : "create")}
+                        style={({ pressed }) => [styles.cardAction, pressed && styles.actionPressed]}
+                      >
+                        <Text style={styles.actionText} numberOfLines={1} adjustsFontSizeToFit>
+                          {clip.shared ? "공유 링크 복사" : "공유 링크 만들기"}
+                        </Text>
+                      </Pressable>
+                      <View style={styles.actionDivider} />
+                    </>
+                  )}
                   <Pressable
                     onPress={() => WebBrowser.openBrowserAsync(clip.url)}
                     style={({ pressed }) => [styles.cardAction, pressed && styles.actionPressed]}
                   >
-                    <Text style={styles.actionText}>바로가기</Text>
+                    <Text style={styles.actionText} numberOfLines={1} adjustsFontSizeToFit>
+                      바로가기
+                    </Text>
                   </Pressable>
                   <View style={styles.actionDivider} />
                   <Pressable
-                    onPress={() => copy(clip.url)}
+                    onPress={() => copyAs(`orig:${clip.id}`, clip.url)}
                     style={({ pressed }) => [styles.cardAction, pressed && styles.actionPressed]}
                   >
-                    <Text style={styles.actionText}>
-                      {copiedUrl === clip.url ? "복사됨 ✓" : "링크 복사"}
+                    <Text style={styles.actionText} numberOfLines={1} adjustsFontSizeToFit>
+                      {copiedKey === `orig:${clip.id}` ? "복사됨 ✓" : "원본 링크 복사"}
                     </Text>
                   </Pressable>
                 </View>
