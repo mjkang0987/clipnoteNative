@@ -4,6 +4,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AuthProvider } from "@/lib/auth";
 import HeaderMenu from "@/components/HeaderMenu";
 import HeaderClipsLink from "@/components/HeaderClipsLink";
+import HeaderNewClip from "@/components/HeaderNewClip";
 import { colors } from "@/lib/theme";
 
 export default function RootLayout() {
@@ -30,7 +31,11 @@ export default function RootLayout() {
           />
           <Stack.Screen
             name="clips"
-            options={{ title: "내 클립", headerLeft: () => <HeaderMenu /> }}
+            options={{
+              title: "내 클립",
+              headerLeft: () => <HeaderMenu />,
+              headerRight: () => <HeaderNewClip />,
+            }}
           />
           <Stack.Screen name="login" options={{ title: "로그인" }} />
           <Stack.Screen
