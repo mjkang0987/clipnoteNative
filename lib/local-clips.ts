@@ -45,6 +45,25 @@ export async function removeLocalClip(url: string): Promise<LocalClip[]> {
   return list;
 }
 
+/** 단건 편집 — 제목·태그 갱신(주어진 필드만). */
+export async function updateLocalClip(
+  url: string,
+  patch: { title?: string; tags?: string[] },
+): Promise<LocalClip[]> {
+  const list = (await getLocalClips()).map((c) =>
+    c.url === url
+      ? {
+          ...c,
+          ...(patch.title !== undefined ? { title: patch.title } : {}),
+          ...(patch.tags !== undefined ? { tags: patch.tags } : {}),
+        }
+      : c,
+  );
+  await save(list);
+  if (patch.tags) await recordTags(patch.tags);
+  return list;
+}
+
 async function save(list: LocalClip[]): Promise<void> {
   try {
     await AsyncStorage.setItem(KEY, JSON.stringify(list));

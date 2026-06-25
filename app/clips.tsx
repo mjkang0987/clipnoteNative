@@ -16,10 +16,12 @@ import {
   removeLocalClip,
   type LocalClip,
 } from "@/lib/local-clips";
+import EditClipModal from "@/components/EditClipModal";
 import { GRADIENTS, colors, pickGradient, radius } from "@/lib/theme";
 
 export default function Clips() {
   const [clips, setClips] = useState<LocalClip[] | null>(null);
+  const [editing, setEditing] = useState<LocalClip | null>(null);
   const router = useRouter();
 
   // 화면에 들어올 때마다 최신 로컬 클립 로드(저장 직후 반영).
@@ -112,17 +114,33 @@ export default function Clips() {
               )}
             </View>
 
-            <Pressable
-              onPress={() => confirmDelete(clip)}
-              hitSlop={8}
-              style={styles.del}
-              accessibilityLabel="클립 삭제"
-            >
-              <Text style={styles.delText}>삭제</Text>
-            </Pressable>
+            <View style={styles.actions}>
+              <Pressable
+                onPress={() => setEditing(clip)}
+                hitSlop={8}
+                style={styles.action}
+                accessibilityLabel="클립 편집"
+              >
+                <Text style={styles.editText}>편집</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => confirmDelete(clip)}
+                hitSlop={8}
+                style={styles.action}
+                accessibilityLabel="클립 삭제"
+              >
+                <Text style={styles.delText}>삭제</Text>
+              </Pressable>
+            </View>
           </Pressable>
         );
       })}
+
+      <EditClipModal
+        clip={editing}
+        onClose={() => setEditing(null)}
+        onSaved={(list) => setClips(list)}
+      />
     </ScrollView>
   );
 }
@@ -188,6 +206,8 @@ const styles = StyleSheet.create({
   },
   tagText: { fontSize: 12, fontWeight: "500", color: colors.brandStrong },
 
-  del: { paddingHorizontal: 6, paddingVertical: 4 },
+  actions: { alignItems: "flex-end", gap: 10, paddingLeft: 4 },
+  action: { paddingHorizontal: 4, paddingVertical: 2 },
+  editText: { fontSize: 13, fontWeight: "500", color: colors.brandStrong },
   delText: { fontSize: 13, fontWeight: "500", color: colors.danger },
 });
