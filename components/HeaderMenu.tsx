@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
+  Image,
   Modal,
   Pressable,
   StyleSheet,
@@ -101,9 +102,16 @@ export default function HeaderMenu() {
               { width: PANEL_W, paddingTop: insets.top + 12, transform: [{ translateX: tx }] },
             ]}
           >
-          <Text style={styles.brand}>
-            Clip<Text style={styles.brandAccent}>Note</Text>
-          </Text>
+          <View style={styles.brandRow}>
+            <Image
+              source={require("../assets/icon.png")}
+              style={styles.brandIcon}
+              accessibilityLabel="ClipNote"
+            />
+            <Text style={styles.brand}>
+              Clip<Text style={styles.brandAccent}>Note</Text>
+            </Text>
+          </View>
           <View style={styles.menu}>
             {ITEMS.map((it) => (
               <Pressable
@@ -166,13 +174,15 @@ const styles = StyleSheet.create({
     borderRightColor: "#2E2C3A",
     paddingHorizontal: 8,
   },
-  brand: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#FFFFFF",
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
     paddingHorizontal: 12,
     paddingBottom: 12,
   },
+  brandIcon: { width: 24, height: 24, borderRadius: 6 },
+  brand: { fontSize: 20, fontWeight: "700", color: "#FFFFFF" },
   brandAccent: { color: "#A593FF" },
   menu: {
     borderTopWidth: StyleSheet.hairlineWidth,
