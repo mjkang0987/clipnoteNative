@@ -29,7 +29,10 @@ export async function signInWithNaver(): Promise<NaverResult> {
       state,
     }).toString();
 
+  console.log("[Naver] returnUrl =", returnUrl);
+  console.log("[Naver] authUrl =", authUrl);
   const res = await WebBrowser.openAuthSessionAsync(authUrl, returnUrl);
+  console.log("[Naver] result =", res.type, (res as { url?: string }).url ?? "");
   if (res.type !== "success" || !res.url) return { ok: false, cancelled: true };
 
   const url = new URL(res.url);
