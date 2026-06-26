@@ -142,6 +142,14 @@ export default function HeaderMenu() {
             >
               <Text style={styles.itemText}>{loggedIn ? "로그아웃" : "로그인"}</Text>
             </Pressable>
+            {loggedIn && (
+              <Pressable
+                onPress={() => close(() => router.push("/account/delete"))}
+                style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
+              >
+                <Text style={[styles.itemText, styles.itemDanger]}>회원 탈퇴</Text>
+              </Pressable>
+            )}
           </View>
           </Animated.View>
         </View>
@@ -192,4 +200,5 @@ const styles = StyleSheet.create({
   item: { paddingHorizontal: 12, paddingVertical: 14, borderRadius: 8 },
   itemPressed: { backgroundColor: "rgba(255,255,255,0.08)" },
   itemText: { fontSize: 16, fontWeight: "500", color: "#F4F4F5" },
+  itemDanger: { color: "#FF8A8A" },
 });
