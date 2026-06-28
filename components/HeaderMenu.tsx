@@ -145,9 +145,9 @@ export default function HeaderMenu() {
             {loggedIn && (
               <Pressable
                 onPress={() => close(() => router.push("/account/delete"))}
-                style={({ pressed }) => [styles.item, pressed && styles.itemPressed]}
+                style={({ pressed }) => [styles.itemMuted, pressed && styles.itemPressed]}
               >
-                <Text style={[styles.itemText, styles.itemDanger]}>회원 탈퇴</Text>
+                <Text style={styles.itemMutedText}>회원 탈퇴</Text>
               </Pressable>
             )}
           </View>
@@ -200,5 +200,7 @@ const styles = StyleSheet.create({
   item: { paddingHorizontal: 12, paddingVertical: 14, borderRadius: 8 },
   itemPressed: { backgroundColor: "rgba(255,255,255,0.08)" },
   itemText: { fontSize: 16, fontWeight: "500", color: "#F4F4F5" },
-  itemDanger: { color: "#FF8A8A" },
+  // 회원 탈퇴 — 메뉴에 두되 눈에 덜 띄게(작은 회색).
+  itemMuted: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8 },
+  itemMutedText: { fontSize: 13, fontWeight: "400", color: "#6B6979" },
 });
