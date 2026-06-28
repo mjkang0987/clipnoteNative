@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   item: { paddingHorizontal: 12, paddingVertical: 14, borderRadius: 8 },
   itemPressed: { backgroundColor: "rgba(255,255,255,0.08)" },
   itemText: { fontSize: 16, fontWeight: "500", color: "#F4F4F5" },
-  // 회원 탈퇴 — 메뉴에 두되 눈에 덜 띄게(작은 회색).
-  itemMuted: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8 },
-  itemMutedText: { fontSize: 13, fontWeight: "400", color: "#6B6979" },
+  // 회원 탈퇴 — 다른 항목과 같은 크기, 색만 회색으로 눈에 덜 띄게.
+  itemMuted: { paddingHorizontal: 12, paddingVertical: 14, borderRadius: 8 },
+  itemMutedText: { fontSize: 16, fontWeight: "500", color: "#6B6979" },
 });
