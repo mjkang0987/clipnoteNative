@@ -76,8 +76,8 @@
 - [ ] 결과 화면(복사·열기·내 클립 저장).
 
 ### Phase 5 — 모바일 특화(핵심 차별점)
-- [ ] **iOS Share Extension** + **Android Share Intent(ACTION_SEND)** — 타 앱에서 URL 공유 받기.
-- [ ] 받은 URL로 앱 진입 → 바로 생성 흐름.
+- [x] **iOS Share Extension** + **Android Share Intent(ACTION_SEND)** — 타 앱에서 URL 공유 받기. (`expo-share-intent` config plugin)
+- [x] 받은 URL로 앱 진입 → 바로 생성 흐름. (`ShareIntentProvider` → 홈이 `webUrl` 받아 입력란 채움 → 자동 메타 추출)
 
 ### Phase 6 — 빌드/출시
 - [ ] EAS Build(dev/preview/prod), 실기기 테스트.

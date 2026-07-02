@@ -11,6 +11,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
+import { useShareIntentContext } from "expo-share-intent";
 import { fetchMetadata, createClip, type ClipMetadata } from "@/lib/api";
 import { addLocalClip } from "@/lib/local-clips";
 import { useAuth } from "@/lib/auth";
@@ -42,6 +43,17 @@ export default function Home() {
 
   const fetchedUrlRef = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  // 타 앱에서 "공유 → ClipNote" 로 넘어온 링크 → URL 입력란 채움(자동 메타 추출로 이어짐).
+  const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntentContext();
+  useEffect(() => {
+    if (!hasShareIntent) return;
+    const shared = (shareIntent.webUrl ?? shareIntent.text ?? "").trim();
+    if (shared) setUrl(shared);
+    resetShareIntent();
+    // shareIntent 는 1회성 — 도착 시에만 처리.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasShareIntent]);
 
   const tags = useMemo(
     () =>
