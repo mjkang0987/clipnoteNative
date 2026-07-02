@@ -140,4 +140,28 @@ export async function deleteClip(
   return res.ok;
 }
 
+export type DeleteAccountResult = { ok: boolean; error?: string };
+
+/** 회원 탈퇴 — 계정과 모든 클립을 삭제. DELETE /api/account. 로그인 토큰 필요.
+ *  서버가 Supabase auth 유저 + 소유 클립을 service role 로 삭제한다(클라이언트 anon
+ *  키로는 유저 삭제 불가 → 반드시 서버 엔드포인트 경유). */
+export async function deleteAccount(
+  accessToken?: string,
+): Promise<DeleteAccountResult> {
+  if (!accessToken) return { ok: false, error: "no_token" };
+  try {
+    const res = await fetch(`${API_BASE}/api/account`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      return { ok: false, error: data.error ?? `account ${res.status}` };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false, error: "network" };
+  }
+}
+
 export { API_BASE };
