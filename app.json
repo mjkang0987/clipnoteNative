@@ -80,7 +80,14 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3019917862455282~8292307574"
+        }
+      ],
+      "./plugins/withKotlinSkipMetadataCheck"
     ],
     "experiments": {
       "typedRoutes": true

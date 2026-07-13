@@ -24,6 +24,8 @@ import { useAuth } from "@/lib/auth";
 import { onClipsRefresh } from "@/lib/clips-refresh";
 import EditClipModal from "@/components/EditClipModal";
 import TagApplyModal from "@/components/TagApplyModal";
+import AdBanner from "@/components/AdBanner";
+import { AD_BANNER_HEIGHT } from "@/lib/ads";
 import { GRADIENTS, colors, pickGradient, radius } from "@/lib/theme";
 
 // 로컬·DB 클립을 한 형태로 통합. id = slug(DB) 또는 url(로컬).
@@ -243,7 +245,8 @@ export default function Clips() {
       <ScrollView
         contentContainerStyle={[
           styles.content,
-          selectMode && { paddingBottom: insets.bottom + 88 },
+          { paddingBottom: insets.bottom + AD_BANNER_HEIGHT + 16 },
+          selectMode && { paddingBottom: insets.bottom + AD_BANNER_HEIGHT + 88 },
         ]}
       >
         <View style={styles.toolbar}>
@@ -422,7 +425,7 @@ export default function Clips() {
       </ScrollView>
 
       {selectMode && (
-        <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 10 }]}>
+        <View style={[styles.bottomBar, { bottom: insets.bottom + AD_BANNER_HEIGHT, paddingBottom: 10 }]}>
           <View style={styles.barRow}>
             <Pressable
               disabled={selected.length === 0}
@@ -451,6 +454,8 @@ export default function Clips() {
           </View>
         </View>
       )}
+
+      <AdBanner floating />
 
       <TagApplyModal
         visible={tagModal}

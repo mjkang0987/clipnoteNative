@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Keyboard,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -15,6 +16,8 @@ import { fetchMetadata, createClip, type ClipMetadata } from "@/lib/api";
 import { addLocalClip } from "@/lib/local-clips";
 import { useAuth } from "@/lib/auth";
 import ShareResultModal from "@/components/ShareResultModal";
+import AdBanner from "@/components/AdBanner";
+import { AD_BANNER_HEIGHT } from "@/lib/ads";
 import { colors, pickGradient, radius } from "@/lib/theme";
 
 export default function Home() {
@@ -211,6 +214,17 @@ export default function Home() {
     setTimeout(() => setDirectSaved(false), 1800);
   }
 
+  // 제목 입력 키보드가 뜨면 하단 배너를 숨김(겹침 방지).
+  const [kbVisible, setKbVisible] = useState(false);
+  useEffect(() => {
+    const show = Keyboard.addListener("keyboardDidShow", () => setKbVisible(true));
+    const hide = Keyboard.addListener("keyboardDidHide", () => setKbVisible(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+
   const noMeta = meta?.source === "none";
 
   // OG 비율(1200:630) 기준 폰트/여백을 카드 너비에 비례 계산 (웹 cqw 대응)
@@ -221,9 +235,10 @@ export default function Home() {
   const fsMark = cardW * 0.026;
 
   return (
+    <View style={styles.screen}>
     <ScrollView
       style={styles.screen}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingBottom: 48 + AD_BANNER_HEIGHT }]}
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.hero}>
@@ -452,6 +467,8 @@ export default function Home() {
         }}
       />
     </ScrollView>
+      {!kbVisible && <AdBanner floating />}
+    </View>
   );
 }
 

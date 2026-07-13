@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import mobileAds from "react-native-google-mobile-ads";
 import { AuthProvider } from "@/lib/auth";
 import HeaderMenu from "@/components/HeaderMenu";
 import HeaderClipsLink from "@/components/HeaderClipsLink";
@@ -10,6 +12,10 @@ import BrandLogo from "@/components/BrandLogo";
 import { colors } from "@/lib/theme";
 
 export default function RootLayout() {
+  useEffect(() => {
+    mobileAds().initialize();
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>
