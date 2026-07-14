@@ -78,6 +78,7 @@ export default function RootLayout() {
               headerLeft: () => <HeaderMenu />,
             }}
           />
+          <Stack.Screen name="onboarding" options={{ headerShown: false }} />
           <Stack.Screen name="auth/naver" options={{ headerShown: false }} />
         </Stack>
       </AuthProvider>

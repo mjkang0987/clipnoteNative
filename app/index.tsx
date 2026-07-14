@@ -18,6 +18,7 @@ import { useAuth } from "@/lib/auth";
 import ShareResultModal from "@/components/ShareResultModal";
 import AdBanner from "@/components/AdBanner";
 import { AD_BANNER_HEIGHT } from "@/lib/ads";
+import { hasSeenOnboarding } from "@/lib/onboarding";
 import { colors, pickGradient, radius } from "@/lib/theme";
 
 export default function Home() {
@@ -214,6 +215,24 @@ export default function Home() {
     setTimeout(() => setDirectSaved(false), 1800);
   }
 
+  // 최초 실행이면 온보딩으로 보냄. 플래그 읽기 전엔 홈 렌더 보류(깜빡임 방지).
+  const [gateChecked, setGateChecked] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const seen = await hasSeenOnboarding();
+      if (!alive) return;
+      if (!seen) {
+        router.replace("/onboarding" as never);
+        return;
+      }
+      setGateChecked(true);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [router]);
+
   // 제목 입력 키보드가 뜨면 하단 배너를 숨김(겹침 방지).
   const [kbVisible, setKbVisible] = useState(false);
   useEffect(() => {
@@ -233,6 +252,8 @@ export default function Home() {
   const fsTitle = effectiveTitle.length > 40 ? cardW * 0.05 : cardW * 0.06;
   const fsDesc = cardW * 0.028;
   const fsMark = cardW * 0.026;
+
+  if (!gateChecked) return null;
 
   return (
     <View style={styles.screen}>
